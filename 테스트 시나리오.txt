@@ -1,0 +1,83 @@
+//////////////////////////////
+// 실행 방법
+//////////////////////////////
+1. ZooKeeper, Kafka 실행
+2. Gateway, Room, Reservation, Payment, Message 서비스 실행
+- C:\projects\airbnb\gateway>mvn spring-boot:run
+- C:\projects\airbnb\Room>mvn spring-boot:run
+- C:\projects\airbnb\Reservation>mvn spring-boot:run
+- C:\projects\airbnb\Payment>mvn spring-boot:run
+- C:\projects\airbnb\Message>mvn spring-boot:run
+
+////////////////
+// 시나리오
+////////////////
+1. ROOM 등록
+http POST localhost:8088/rooms desc="Beautiful House"  
+2. ROOM 등록 확인
+http GET localhost:8088/rooms
+3. 예약 등록
+http POST localhost:8088/reservations roomId=1 status=reqReserve
+4. 예약 등록 확인
+http GET localhost:8088/rooms                --> reserved 상태
+http GET localhost:8088/reservations         --> reserved 상태, payId 들어왔는지 확인
+http GET localhost:8088/payments            --> paid 상태
+http GET localhost:8088/messages            --> 예약등록 메시지 확인
+4-1. 예약 재등록 시도 -> 예약된 상태이므로 아무작업도 안일어남.
+http POST localhost:8088/reservations roomId=1 status=reqReserve
+5. 예약 취소
+http PATCH localhost:8088/reservations/1 status=reqCancel
+6. 예약 취소 확인
+http GET localhost:8088/rooms                --> available 상태, lastAction=cancelled
+http GET localhost:8088/reservations         --> cancelled 상태
+http GET localhost:8088/payments            --> cancelled 상태
+http GET localhost:8088/messages            --> 예약취소 메시지 확인
+7. ROOM 리뷰 작성
+http POST localhost:8088/reviews roomId=1 content="Good Room"
+http GET localhost:8088/reviews               --> 리뷰 등록 확인
+http GET localhost:8088/rooms                --> 리뷰 건수 증가 확인
+7. ROOM 리뷰 수정
+http PATCH localhost:8088/reviews/1 content="Good Room. But Expensive"
+http GET localhost:8088/reviews               --> 리뷰 수정 확인
+8. ROOM 리뷰 삭제
+http DELETE localhost:8088/reviews/1
+http GET localhost:8088/reviews               --> 리뷰 삭제 확인
+http GET localhost:8088/rooms                --> 리뷰 건수 감소 확인
+
+----------------------------------
+단위 테스트
+----------------------------------
+/////////////
+// ROOM
+/////////////
+http GET localhost:8088/rooms 
+http POST localhost:8088/rooms desc="Beautiful House" 
+http PATCH localhost:8088/rooms/1 desc="Beautiful House 2" lastAction=modify
+http PATCH localhost:8088/rooms/1 status=reserved lastAction=reserved
+http PATCH localhost:8088/rooms/1 status=available lastAction=cancelled
+http DELETE localhost:8088/rooms/1
+
+////////////////
+// Reviews
+/////////////////
+http GET localhost:8088/reviews
+http POST localhost:8088/reviews roomId=1 content="Good Room"
+http PATCH localhost:8088/reviews/1 content="NOT Good Room"
+http DELETE localhost:8088/reviews/1
+
+////////////////////
+// Reservation
+////////////////////
+http GET localhost:8088/reservations
+http POST localhost:8088/reservations roomId=1 status=reqReserve
+http PATCH localhost:8088/reservations/1 status=reqCancel
+
+///////////////////
+// Payment
+/////////////////
+http GET localhost:8088/payments
+
+////////////////
+// Message
+/////////////////
+http GET localhost:8088/messages
