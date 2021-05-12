@@ -1,6 +1,8 @@
 //////////////////////////////
 // 실행 방법
 //////////////////////////////
+0. C:\airbnb_project 폴더 생성 후 
+- C:\airbnb_project> git clone https://github.com/indie2k/airbnb_project.git .
 1. ZooKeeper, Kafka 실행
 2. Gateway, Room, Reservation, Payment, Message 서비스 실행
 - C:\projects\airbnb\gateway>mvn spring-boot:run
