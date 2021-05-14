@@ -1,37 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: Message
+  name: message
   labels:
-    app: Message
+    app: message
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: Message
+      app: message
   template:
     metadata:
       labels:
-        app: Message
+        app: message
     spec:
       containers:
-        - name: Message
-          image: username/Message:latest
+        - name: message
+          image: 247785678011.dkr.ecr.us-east-2.amazonaws.com/message:1.0
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 10
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
-          livenessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 120
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 5
