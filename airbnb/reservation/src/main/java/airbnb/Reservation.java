@@ -28,7 +28,7 @@ public class Reservation {
         // 해당 ROOM이 Available한 상태인지 체크
         boolean result = ReservationApplication.applicationContext.getBean(airbnb.external.RoomService.class)
                         .chkAndReqReserve(this.getRoomId());
-        System.out.println("Result : " + result);
+        System.out.println("######## Check Result : " + result);
 
         if(result) { 
 

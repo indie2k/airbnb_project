@@ -26,16 +26,20 @@ import javax.servlet.http.HttpServletResponse;
 
                 // Parameter로 받은 RoomID 추출
                 long roomId = Long.valueOf(request.getParameter("roomId"));
+                System.out.println("######################## chkAndReqReserve roomId : " + roomId);
 
                 // RoomID 데이터 조회
                 Optional<Room> res = roomRepository.findById(roomId);
                 Room room = res.get(); // 조회한 ROOM 데이터
+                System.out.println("######################## chkAndReqReserve room.getStatus() : " + room.getStatus());
 
                 // room의 상태가 available이면 true
                 boolean result = false;
                 if(room.getStatus().equals("available")) {
                         result = true;
                 } 
+
+                System.out.println("######################## chkAndReqReserve Return : " + result);
                 return result;
         }
  }
