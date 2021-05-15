@@ -44,19 +44,19 @@ spring:
     gateway:
       routes:
         - id: payment
-          uri: http://Payment:8080
+          uri: http://payment:8080
           predicates:
             - Path=/payments/** 
         - id: room
-          uri: http://Room:8080
+          uri: http://room:8080
           predicates:
             - Path=/rooms/**, /reviews/**, /check/**
         - id: reservation
-          uri: http://Reservation:8080
+          uri: http://reservation:8080
           predicates:
             - Path=/reservations/**
         - id: message
-          uri: http://Message:8080
+          uri: http://message:8080
           predicates:
             - Path=/messages/** 
       globalcors:
