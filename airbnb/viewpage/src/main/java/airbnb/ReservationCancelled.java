@@ -1,23 +1,16 @@
 package airbnb;
 
-public class PaymentCancelled extends AbstractEvent {
+public class ReservationCancelled extends AbstractEvent {
 
-    private Long payId;
     private Long rsvId;
     private Long roomId;
     private String status;
+    private Long payId;
 
-    public PaymentCancelled(){
+    public ReservationCancelled(){
         super();
     }
 
-    public Long getPayId() {
-        return payId;
-    }
-
-    public void setPayId(Long payId) {
-        this.payId = payId;
-    }
     public Long getRsvId() {
         return rsvId;
     }
@@ -39,4 +32,13 @@ public class PaymentCancelled extends AbstractEvent {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public Long getPayId() {
+        return payId;
+    }
+
+    public void setPayId(Long payId) {
+        this.payId = payId;
+    }
+
 }

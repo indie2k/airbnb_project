@@ -4,6 +4,7 @@ public class Payment {
 
     private Long payId;
     private Long rsvId;
+    private Long roomId;
     private String status;
 
     public Long getPayId() {
@@ -17,6 +18,13 @@ public class Payment {
     }
     public void setRsvId(Long rsvId) {
         this.rsvId = rsvId;
+    }
+    public Long getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
     }
     public String getStatus() {
         return status;

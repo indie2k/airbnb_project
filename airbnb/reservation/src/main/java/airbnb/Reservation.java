@@ -39,6 +39,7 @@ public class Reservation {
             //////////////////////////////
             airbnb.external.Payment payment = new airbnb.external.Payment();
             payment.setRsvId(this.getRsvId());
+            payment.setRoomId(this.getRoomId());
             payment.setStatus("paid");
             ReservationApplication.applicationContext.getBean(airbnb.external.PaymentService.class)
                 .approvePayment(payment);

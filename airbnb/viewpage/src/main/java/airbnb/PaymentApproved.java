@@ -1,13 +1,13 @@
 package airbnb;
 
-public class PaymentCancelled extends AbstractEvent {
+public class PaymentApproved extends AbstractEvent {
 
     private Long payId;
     private Long rsvId;
     private Long roomId;
     private String status;
 
-    public PaymentCancelled(){
+    public PaymentApproved(){
         super();
     }
 

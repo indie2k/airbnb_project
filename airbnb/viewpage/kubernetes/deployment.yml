@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: message
+  name: viewpage
   labels:
-    app: message
+    app: viewpage
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: message
+      app: viewpage
   template:
     metadata:
       labels:
-        app: message
+        app: viewpage
     spec:
       containers:
-        - name: message
-          image: 247785678011.dkr.ecr.us-east-2.amazonaws.com/message:1.0
+        - name: viewpage
+          image: 247785678011.dkr.ecr.us-east-2.amazonaws.com/viewpage:1.0
           ports:
             - containerPort: 8080
           readinessProbe:
             httpGet:
-              path: '/messages'
+              path: '/roomviews'
               port: 8080
             initialDelaySeconds: 10
             timeoutSeconds: 2
@@ -29,7 +29,7 @@ spec:
             failureThreshold: 10
           livenessProbe:
             httpGet:
-              path: '/messages'
+              path: '/roomviews'
               port: 8080
             initialDelaySeconds: 120
             timeoutSeconds: 2

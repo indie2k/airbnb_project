@@ -45,8 +45,8 @@ public class Room {
 
         System.out.println("lastAction : " + lastAction);
 
-        // RoomModified Event 발생
-        if(lastAction.equals("modify")) {
+        // RoomModified Event 발생 혹은 리뷰 이벤트 발생시
+        if(lastAction.equals("modify") || lastAction.equals("review")) {
             RoomModified roomModified = new RoomModified();
             BeanUtils.copyProperties(this, roomModified);
             roomModified.publishAfterCommit();
@@ -67,9 +67,9 @@ public class Room {
         }
 
         // review 작성/삭제 시 -> Do Nothing
-        if(lastAction.equals("review")) {
+        //if(lastAction.equals("review")) {
             // Do Nothing
-        }
+        //}
         
     }
 
