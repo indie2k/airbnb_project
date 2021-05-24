@@ -651,9 +651,11 @@ codebuild 프로젝트 및 빌드 이력
 ![codebuild(로그)](https://user-images.githubusercontent.com/38099203/119283850-30c1bd00-bc79-11eb-9547-1ff1f62e48a4.PNG)
 
 - codebuild 빌드 내역 (Message 서비스 세부)
+
 ![image](https://user-images.githubusercontent.com/31723044/119385500-2b0fba00-bd01-11eb-861b-cc31910ff945.png)
 
 - codebuild 빌드 내역 (전체 이력 조회)
+
 ![image](https://user-images.githubusercontent.com/31723044/119385401-087da100-bd01-11eb-8b69-ce222e6bb71e.png)
 
 
