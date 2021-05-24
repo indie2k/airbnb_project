@@ -3,7 +3,7 @@
     - 게이트웨이와 인증서버(OAuth), JWT 토큰 인증을 통하여 마이크로서비스들을 보호할 수 있는가?
 
 
-    - API gateway 설정
+  - API 게이트웨이
       1. gateway 스프링부트 App을 추가하고 application.yml 에서 각 마이크로 서비스의 routes 를 설정하고 gateway 서버의 포트를 8080 으로 설정함.
          ![image](https://user-images.githubusercontent.com/80744273/119316082-7dc18580-bcb1-11eb-83e7-64b6f8130ada.png)
       2. Kubernetes  Deployment.yaml 을 작성함
