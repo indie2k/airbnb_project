@@ -6,7 +6,7 @@
          
       2. Kubernetes용  Deployment.yaml 을 작성하고 Kubernetes에 Deploy를 생성함
           - Deployment.yaml 예시
-          -
+          
             ![image](https://user-images.githubusercontent.com/80744273/119316250-b7928c00-bcb1-11eb-8caa-960c7326603e.png)
           - Kubernetes에 생성된 Deploy. 확인
           
