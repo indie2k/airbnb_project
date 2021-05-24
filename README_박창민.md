@@ -97,6 +97,72 @@
   - API 게이트웨이
     - API GW를 통하여 마이크로 서비스들의 집입점을 통일할 수 있는가?
     - 게이트웨이와 인증서버(OAuth), JWT 토큰 인증을 통하여 마이크로서비스들을 보호할 수 있는가?
+
+    - gateway 설정
+      1. gateway 스프링부트 App을 추가하고 application.yml 에서 각 마이크로 서비스의 routes 를 설정하고 gateway 서버의 포트를 8080 으로 설정함.
+          spring:
+            profiles: docker
+            cloud:
+              gateway:
+                routes:
+                  - id: payment
+                    uri: http://payment:8080
+                    predicates:
+                      - Path=/payments/** 
+                  - id: room
+                    uri: http://room:8080
+                    predicates:
+                      - Path=/rooms/**, /reviews/**, /check/**
+                  - id: reservation
+                    uri: http://reservation:8080
+                    predicates:
+                      - Path=/reservations/**
+                  - id: message
+                    uri: http://message:8080
+                    predicates:
+                      - Path=/messages/** 
+                  - id: viewpage
+                    uri: http://viewpage:8080
+                    predicates:
+                      - Path= /roomviews/**
+                globalcors:
+                  corsConfigurations:
+                    '[/**]':
+                      allowedOrigins:
+                        - "*"
+                      allowedMethods:
+                        - "*"
+                      allowedHeaders:
+                        - "*"
+                      allowCredentials: true
+
+          server:
+            port: 8080
+            
+       2. gateway를 Deployment를 수행함.
+          kubectl apply -f ./Deployment.yaml
+          ![image](https://user-images.githubusercontent.com/80744273/119315603-f8d66c00-bcb0-11eb-84e2-615134c6f360.png)
+
+       4. Service/LoadBalancer을 추가하여 엔드포인트를 생성함. 
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: gateway
+            namespace: airbnb
+            labels:
+              app: gateway
+          spec:
+            ports:
+              - port: 8080
+                targetPort: 8080
+            selector:
+              app: gateway
+            type:
+              LoadBalancer
+           
+          kubectl apply -f ./Service.yaml
+          ![image](https://user-images.githubusercontent.com/80744273/119315658-0c81d280-bcb1-11eb-8c0a-ee480277ee7d.png)
+
 - 운영
   - SLA 준수
     - 셀프힐링: Liveness Probe 를 통하여 어떠한 서비스의 health 상태가 지속적으로 저하됨에 따라 어떠한 임계치에서 pod 가 재생되는 것을 증명할 수 있는가?
