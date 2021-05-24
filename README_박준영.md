@@ -36,12 +36,10 @@ AirBnB 커버하기
 3. 고객이 결제한다.
 4. 예약이 되면 예약 내역이 호스트에게 전달된다.
 5. 고객이 예약을 취소할 수 있다.
-6. 고객이 예약을 변경할 수 있다.
-7. 호스트가 예약을 취소할 수 있다.
-8. 고객이 예약 상태를 조회한다.
-9. 호스트가 본인의 임대 현황을 조회한다.
-10. 예약 사항이 변경될 경우 알림을 보낸다.
-11. 사용자가 후기를 남길 수 있다.
+6. 고객이 예약 상태를 조회한다.
+7. 호스트가 본인의 임대 현황을 조회한다.
+8. 예약 사항이 변경될 경우 알림을 보낸다.
+9. 사용자가 후기를 남길 수 있다.
 
 비기능적 요구사항
 1. 트랜잭션
@@ -159,33 +157,32 @@ AirBnB 커버하기
 
 ### 폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)
 
-![image](https://user-images.githubusercontent.com/487999/79683641-5f938580-8266-11ea-9fdb-4e80ff6642fe.png)
+![image](https://user-images.githubusercontent.com/15603058/119304604-73e45600-bca2-11eb-8f1d-607006919fab.png)
 
 ### 완성된 1차 모형
 
-![image](https://user-images.githubusercontent.com/487999/79683646-63bfa300-8266-11ea-9bc5-c0b650507ac8.png)
+![image](https://user-images.githubusercontent.com/15603058/119305002-0edd3000-bca3-11eb-9cc0-1ba8b17f2432.png)
 
     - View Model 추가
 
 ### 1차 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증
 
-![image](https://user-images.githubusercontent.com/487999/79684167-3ecd2f00-826a-11ea-806a-957362d197e3.png)
+![image](https://user-images.githubusercontent.com/15603058/119306321-f110ca80-bca4-11eb-804c-a965220bad61.png)
 
-    - 고객이 메뉴를 선택하여 주문한다 (ok)
-    - 고객이 결제한다 (ok)
-    - 주문이 되면 주문 내역이 입점상점주인에게 전달된다 (ok)
-    - 상점주인이 확인하여 요리해서 배달 출발한다 (ok)
-
-![image](https://user-images.githubusercontent.com/487999/79684170-47256a00-826a-11ea-9777-e16fafff519a.png)
-    - 고객이 주문을 취소할 수 있다 (ok)
-    - 주문이 취소되면 배달이 취소된다 (ok)
-    - 고객이 주문상태를 중간중간 조회한다 (View-green sticker 의 추가로 ok) 
-    - 주문상태가 바뀔 때 마다 카톡으로 알림을 보낸다 (?)
+    - 호스트가 임대할 숙소를 등록한다.(ok)
+    - 고객이 숙소를 선택하여 예약한다.(ok)
+    - 고객이 결제한다.(ok)
+    - 예약이 되면 예약 내역이 호스트에게 전달된다.(?)
+    - 고객이 예약을 취소할 수 있다.(ok)
+    - 고객이 예약 상태를 조회한다.(View-green Sticker 추가로 ok)
+    - 호스트가 본인의 임대 현황을 조회한다.(?)
+    - 예약 사항이 변경될 경우 알림을 보낸다.(?)
+    - 사용자가 후기를 남길 수 있다.(ok)
 
 
 ### 모델 수정
 
-![image](https://user-images.githubusercontent.com/487999/79684176-4e4c7800-826a-11ea-8deb-b7b053e5d7c6.png)
+![image](https://user-images.githubusercontent.com/15603058/119306670-75fbe400-bca5-11eb-9784-dd080ab14fb7.png)
     
     - 수정된 모델은 모든 요구사항을 커버함.
 
