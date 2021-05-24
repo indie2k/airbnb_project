@@ -11,9 +11,9 @@
             ![image](https://user-images.githubusercontent.com/80744273/119316250-b7928c00-bcb1-11eb-8caa-960c7326603e.png)
             
           - Kubernetes에 생성된 Deploy. 확인
-          
-            ![image](https://user-images.githubusercontent.com/80744273/119315603-f8d66c00-bcb0-11eb-84e2-615134c6f360.png)
-
+            
+            ![image](https://user-images.githubusercontent.com/80744273/119321943-1d821200-bcb8-11eb-98d7-bf8def9ebf80.png)
+            
       3. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
           - Service.yaml 예시
           
