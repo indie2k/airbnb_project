@@ -233,6 +233,12 @@ Shortest transaction:           0.01
 
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 
+```
+kubectl delete destinationrules dr-room -n airbnb
+kubectl label namespace airbnb istio-injection-
+kubectl delete hpa room -n airbnb
+```
+
 - seige 로 배포작업 직전에 워크로드를 모니터링 함.
 ```
 siege -c100 -t60S -r10 -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
@@ -325,4 +331,3 @@ livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
 
 ![30초 이후](https://user-images.githubusercontent.com/38099203/119304346-17813680-bca2-11eb-8382-4af444331182.PNG)
 ![describe](https://user-images.githubusercontent.com/38099203/119304613-76df4680-bca2-11eb-8f06-ea2fa15593d3.PNG)
-
