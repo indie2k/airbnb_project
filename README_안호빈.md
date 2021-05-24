@@ -350,6 +350,7 @@ pod 정상 상태 일때 pod 진입하여 /tmp/healthy 파일 생성해주면 �
 
 # Config Map/ Persistence Volume
 - Persistence Volume
+
 1: EFS 생성
 ```
 EFS 생성 시 클러스터의 VPC를 선택해야함
@@ -442,7 +443,7 @@ roleRef:
 
 ```
 
-3. Step. 3: EFS Provisioner 배포
+3. EFS Provisioner 배포
 ```
 kubectl apply -f efs-provisioner-deploy.yml
 
@@ -569,6 +570,7 @@ drwxr-xr-x    1 root     root            17 May 24 15:42 ..
 
 
 - Config Map
+
 1: cofingmap.yml 파일 생성
 ```
 kubectl apply -f cofingmap.yml
