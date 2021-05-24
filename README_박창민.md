@@ -4,7 +4,7 @@
 
 
   - API 게이트웨이
-      1. gateway 스프링부트 App을 추가하고 application.yml 에서 각 마이크로 서비스의 routes 를 설정하고 gateway 서버의 포트를 8080 으로 설정함.
+      1. gateway 스프링부트 App을 추가 후 application.yml내에 각 마이크로 서비스의 routes 를 추가하고 gateway 서버의 포트를 8080 으로 설정함.
          ![image](https://user-images.githubusercontent.com/80744273/119316082-7dc18580-bcb1-11eb-83e7-64b6f8130ada.png)
       2. Kubernetes  Deployment.yaml 을 작성함
           ![image](https://user-images.githubusercontent.com/80744273/119316250-b7928c00-bcb1-11eb-8caa-960c7326603e.png)
