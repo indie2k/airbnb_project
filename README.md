@@ -33,28 +33,27 @@ AirBnB 커버하기
 기능적 요구사항
 1. 호스트가 임대할 숙소를 등록/수정/삭제한다.
 2. 고객이 숙소를 선택하여 예약한다.
-3. 고객이 결제한다.
-4. 예약이 되면 예약 내역이 호스트에게 전달된다.
+3. 예약과 동시에 결제가 진행된다.
+4. 예약이 되면 예약 내역(Message)이 호스트에게 전달된다.
 5. 고객이 예약을 취소할 수 있다.
-6. 호스트가 본인의 임대 현황을 조회한다.
-7. 예약 사항이 변경될 경우 알림을 보낸다.
-8. 사용자가 후기를 남길 수 있다.
+6. 예약 사항이 취소될 경우 알림을 보낸다.
+7. 숙소에 후기(리뷰)를 남길 수 있다.
+8. 전체적인 숙소에 대한 정보 및 예약 상태 등을 한 화면에서 확인 할 수 있다.
 
 비기능적 요구사항
 1. 트랜잭션
-    1. 결제가 되지 않은 주문건은 아예 예약이 성립되지 않아야 한다  Sync 호출 
+    1. 결제가 되지 않은 예약 건은 성립되지 않아야 한다.  (Sync 호출)
 1. 장애격리
     1. 예약관리 기능이 수행되지 않더라도 주문은 365일 24시간 받을 수 있어야 한다  Async (event-driven), Eventual Consistency
-    1. 예약시스템이 과중되면 사용자를 잠시동안 받지 않고 잠시후에 하도록 유도한다  Circuit breaker, fallback
+    1. 예약 시스템이 과중되면 사용자를 잠시동안 받지 않고 잠시 후에 하도록 유도한다  Circuit breaker, fallback
 1. 성능
-    1. 고객이 자주 예약관리에서 확인할 수 있는 예약상태를 예약시스템(프론트엔드)에서 확인할 수 있어야 한다  CQRS
-    1. 예약상태가 바뀔때마다 카톡 등으로 알림을 줄 수 있어야 한다  Event driven
+    1. 사용자가 모든 방에 대한 정보 및 예약 상태 등을 한번에 확인할 수 있어야 한다  (CQRS)
+    1. 예약의 상태가 바뀔 때마다 카톡 등으로 알림을 줄 수 있어야 한다  Event driven
 
 
 # 체크포인트
 
 - 분석 설계
-
 
   - 이벤트스토밍: 
     - 스티커 색상별 객체의 의미를 제대로 이해하여 헥사고날 아키텍처와의 연계 설계에 적절히 반영하고 있는가?
@@ -145,9 +144,9 @@ AirBnB 커버하기
 ![image](https://user-images.githubusercontent.com/15603058/119300858-6c21b300-bc9c-11eb-9b3f-c85aff51658f.png)
 
     - 도메인 서열 분리 
-        - Core Domain:  reservation(front), room : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservation 의 경우 1주일 1회 미만, room 의 경우 1개월 1회 미만
-        - Supporting Domain:   marketing, customer : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
-        - General Domain:   payment : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 (핑크색으로 이후 전환할 예정)
+        - Core Domain:  reservation, room : 없어서는 안될 핵심 서비스이며, 연간 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservation 의 경우 1주일 1회 미만, room 의 경우 1개월 1회 미만
+        - Supporting Domain:   message, viewpage : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
+        - General Domain:   payment : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 
 
 ### 폴리시 부착 (괄호는 수행주체, 폴리시 부착을 둘째단계에서 해놔도 상관 없음. 전체 연계가 초기에 드러남)
 
@@ -207,10 +206,14 @@ AirBnB 커버하기
 
 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 808n 이다)
 
+```
+   mvn spring-boot:run
+```
+
 ## CQRS
 
 숙소(Room) 의 사용가능 여부, 리뷰 및 예약/결재 등 총 Status 에 대하여 고객(Customer)이 조회 할 수 있도록 CQRS 로 구현하였다.
-- room, review, reservation, payment 개별 Aggregate Status 를 통합조회하여 성능 Issue 를 사전에 예방할 수 있다.
+- room, review, reservation, payment 개별 Aggregate Status 를 통합 조회하여 성능 Issue 를 사전에 예방할 수 있다.
 - 비동기식으로 처리되어 발행된 이벤트 기반 Kafka 를 통해 수신/처리 되어 별도 Table 에 관리한다
 - Table 모델링 (ROOMVIEW)
 
@@ -263,7 +266,6 @@ AirBnB 커버하기
             server:
               port: 8080            
             ```
-
          
       2. Kubernetes용 Deployment.yaml 을 작성하고 Kubernetes에 Deploy를 생성함
           - Deployment.yaml 예시
@@ -341,69 +343,86 @@ AirBnB 커버하기
 
 ## DDD 의 적용
 
-- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 pay 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 하지만, 일부 구현에 있어서 영문이 아닌 경우는 실행이 불가능한 경우가 있기 때문에 계속 사용할 방법은 아닌것 같다. (Maven pom.xml, Kafka의 topic id, FeignClient 의 서비스 id 등은 한글로 식별자를 사용하는 경우 오류가 발생하는 것을 확인하였다)
+- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다. (예시는 room 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 현실에서 발생가는한 이벤트에 의하여 마이크로 서비스들이 상호 작용하기 좋은 모델링으로 구현을 하였다.
 
 ```
-package fooddelivery;
+package airbnb;
 
 import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
-import java.util.List;
 
 @Entity
-@Table(name="결제이력_table")
-public class 결제이력 {
+@Table(name="Room_table")
+public class Room {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long id;
-    private String orderId;
-    private Double 금액;
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long roomId;       // 방ID
+    private String status;     // 방 상태
+    private String desc;       // 방 상세 설명
+    private Long reviewCnt;    // 리뷰 건수
+    private String lastAction; // 최종 작업
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public String getOrderId() {
-        return orderId;
+    public Long getRoomId() {
+        return roomId;
     }
 
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
     }
-    public Double get금액() {
-        return 금액;
-    }
-
-    public void set금액(Double 금액) {
-        this.금액 = 금액;
+    public String getStatus() {
+        return status;
     }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+    public Long getReviewCnt() {
+        return reviewCnt;
+    }
+
+    public void setReviewCnt(Long reviewCnt) {
+        this.reviewCnt = reviewCnt;
+    }
+    public String getLastAction() {
+        return lastAction;
+    }
+
+    public void setLastAction(String lastAction) {
+        this.lastAction = lastAction;
+    }
 }
 
 ```
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
 ```
-package fooddelivery;
+package airbnb;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-public interface 결제이력Repository extends PagingAndSortingRepository<결제이력, Long>{
+@RepositoryRestResource(collectionResourceRel="rooms", path="rooms")
+public interface RoomRepository extends PagingAndSortingRepository<Room, Long>{
+
 }
 ```
 - 적용 후 REST API 의 테스트
 ```
-# app 서비스의 주문처리
-http localhost:8081/orders item="통닭"
+# room 서비스의 room 등록
+http POST http://localhost:8088/rooms desc="Beautiful House"  
 
-# store 서비스의 배달처리
-http localhost:8083/주문처리s orderId=1
+# reservation 서비스의 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve
 
-# 주문 상태 확인
-http localhost:8081/orders/1
+# reservation 서비스의 예약 상태 확인
+http GET http://localhost:8088/reservations
 
 ```
 
