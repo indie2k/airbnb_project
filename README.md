@@ -496,38 +496,85 @@ CMD ["python", "policy-handler.py"]
 ```
 
 
-## 동기식 호출 과 Fallback 처리
+## 동기식 호출(Sync) 과 Fallback 처리
 
-분석단계에서의 조건 중 하나로 주문(app)->결제(pay) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+분석 단계에서의 조건 중 하나로 예약 시 숙소(room) 간의 예약 가능 상태 확인 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 또한 예약(reservation) -> 결제(payment) 서비스도 동기식으로 처리하기로 하였다.
 
-- 결제서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
+- 룸, 결제 서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 
 ```
-# (app) 결제이력Service.java
+# PaymentService.java
 
-package fooddelivery.external;
+package airbnb.external;
 
-@FeignClient(name="pay", url="http://localhost:8082")//, fallback = 결제이력ServiceFallback.class)
-public interface 결제이력Service {
+<import문 생략>
 
-    @RequestMapping(method= RequestMethod.POST, path="/결제이력s")
-    public void 결제(@RequestBody 결제이력 pay);
+@FeignClient(name="Payment", url="${prop.room.url}")
+public interface PaymentService {
+
+    @RequestMapping(method= RequestMethod.POST, path="/payments")
+    public void approvePayment(@RequestBody Payment payment);
 
 }
+
+# RoomService.java
+
+package airbnb.external;
+
+<import문 생략>
+
+@FeignClient(name="Room", url="${prop.room.url}")
+public interface RoomService {
+
+    @RequestMapping(method= RequestMethod.GET, path="/check/chkAndReqReserve")
+    public boolean chkAndReqReserve(@RequestParam("roomId") long roomId);
+
+}
+
+
 ```
 
-- 주문을 받은 직후(@PostPersist) 결제를 요청하도록 처리
+- 예약 요청을 받은 직후(@PostPersist) 가능상태 확인 및 결제를 동기(Sync)로 요청하도록 처리
 ```
-# Order.java (Entity)
+# Reservation.java (Entity)
 
     @PostPersist
     public void onPostPersist(){
 
-        fooddelivery.external.결제이력 pay = new fooddelivery.external.결제이력();
-        pay.setOrderId(getOrderId());
-        
-        Application.applicationContext.getBean(fooddelivery.external.결제이력Service.class)
-                .결제(pay);
+        ////////////////////////////////
+        // RESERVATION에 INSERT 된 경우 
+        ////////////////////////////////
+
+        ////////////////////////////////////
+        // 예약 요청(reqReserve) 들어온 경우
+        ////////////////////////////////////
+
+        // 해당 ROOM이 Available한 상태인지 체크
+        boolean result = ReservationApplication.applicationContext.getBean(airbnb.external.RoomService.class)
+                        .chkAndReqReserve(this.getRoomId());
+        System.out.println("######## Check Result : " + result);
+
+        if(result) { 
+
+            // 예약 가능한 상태인 경우(Available)
+
+            //////////////////////////////
+            // PAYMENT 결제 진행 (POST방식) - SYNC 호출
+            //////////////////////////////
+            airbnb.external.Payment payment = new airbnb.external.Payment();
+            payment.setRsvId(this.getRsvId());
+            payment.setRoomId(this.getRoomId());
+            payment.setStatus("paid");
+            ReservationApplication.applicationContext.getBean(airbnb.external.PaymentService.class)
+                .approvePayment(payment);
+
+            /////////////////////////////////////
+            // 이벤트 발행 --> ReservationCreated
+            /////////////////////////////////////
+            ReservationCreated reservationCreated = new ReservationCreated();
+            BeanUtils.copyProperties(this, reservationCreated);
+            reservationCreated.publishAfterCommit();
+        }
     }
 ```
 
@@ -537,17 +584,15 @@ public interface 결제이력Service {
 ```
 # 결제 (pay) 서비스를 잠시 내려놓음 (ctrl+c)
 
-#주문처리
-http localhost:8081/orders item=통닭 storeId=1   #Fail
-http localhost:8081/orders item=피자 storeId=2   #Fail
+# 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Fail
 
-#결제서비스 재기동
-cd 결제
+# 결제서비스 재기동
+cd payment
 mvn spring-boot:run
 
-#주문처리
-http localhost:8081/orders item=통닭 storeId=1   #Success
-http localhost:8081/orders item=피자 storeId=2   #Success
+# 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Success
 ```
 
 - 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
@@ -558,86 +603,81 @@ http localhost:8081/orders item=피자 storeId=2   #Success
 ## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
 
 
-결제가 이루어진 후에 상점시스템으로 이를 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 상점 시스템의 처리를 위하여 결제주문이 블로킹 되지 않아도록 처리한다.
+결제가 이루어진 후에 숙소 시스템의 상태가 업데이트 되고, 예약 시스템의 상태가 업데이트 되며, 예약 및 취소 메시지가 전송되는 시스템과의 통신 행위는 비동기식으로 처리한다.
  
-- 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
+- 이를 위하여 결제가 승인되면 결제가 승인 되었다는 이벤트를 카프카로 송출한다. (Publish)
  
 ```
-package fooddelivery;
+# Payment.java
+
+package airbnb;
+
+import javax.persistence.*;
+import org.springframework.beans.BeanUtils;
 
 @Entity
-@Table(name="결제이력_table")
-public class 결제이력 {
+@Table(name="Payment_table")
+public class Payment {
 
- ...
-    @PrePersist
-    public void onPrePersist(){
-        결제승인됨 결제승인됨 = new 결제승인됨();
-        BeanUtils.copyProperties(this, 결제승인됨);
-        결제승인됨.publish();
+    ....
+
+    @PostPersist
+    public void onPostPersist(){
+        ////////////////////////////
+        // 결제 승인 된 경우
+        ////////////////////////////
+
+        // 이벤트 발행 -> PaymentApproved
+        PaymentApproved paymentApproved = new PaymentApproved();
+        BeanUtils.copyProperties(this, paymentApproved);
+        paymentApproved.publishAfterCommit();
     }
-
+    
+    ....
 }
 ```
-- 상점 서비스에서는 결제승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
+
+- 예약 시스템에서는 결제 승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
 
 ```
-package fooddelivery;
+# Reservation.java
 
-...
+package airbnb;
 
-@Service
-public class PolicyHandler{
+    @PostUpdate
+    public void onPostUpdate(){
+    
+        ....
 
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whenever결제승인됨_주문정보받음(@Payload 결제승인됨 결제승인됨){
+        if(this.getStatus().equals("reserved")) {
 
-        if(결제승인됨.isMe()){
-            System.out.println("##### listener 주문정보받음 : " + 결제승인됨.toJson());
-            // 주문 정보를 받았으니, 요리를 슬슬 시작해야지..
-            
+            ////////////////////
+            // 예약 확정된 경우
+            ////////////////////
+
+            // 이벤트 발생 --> ReservationConfirmed
+            ReservationConfirmed reservationConfirmed = new ReservationConfirmed();
+            BeanUtils.copyProperties(this, reservationConfirmed);
+            reservationConfirmed.publishAfterCommit();
         }
+        
+        ....
+        
     }
 
-}
-
-```
-실제 구현을 하자면, 카톡 등으로 점주는 노티를 받고, 요리를 마친후, 주문 상태를 UI에 입력할테니, 우선 주문정보를 DB에 받아놓은 후, 이후 처리는 해당 Aggregate 내에서 하면 되겠다.:
-  
-```
-  @Autowired 주문관리Repository 주문관리Repository;
-  
-  @StreamListener(KafkaProcessor.INPUT)
-  public void whenever결제승인됨_주문정보받음(@Payload 결제승인됨 결제승인됨){
-
-      if(결제승인됨.isMe()){
-          카톡전송(" 주문이 왔어요! : " + 결제승인됨.toString(), 주문.getStoreId());
-
-          주문관리 주문 = new 주문관리();
-          주문.setId(결제승인됨.getOrderId());
-          주문관리Repository.save(주문);
-      }
-  }
-
 ```
 
-상점 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 상점시스템이 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다:
+그 외 메시지 서비스는 예약/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 메시지 서비스가 유지보수로 인해 잠시 내려간 상태 라도 예약을 받는데 문제가 없다.
+
 ```
-# 상점 서비스 (store) 를 잠시 내려놓음 (ctrl+c)
+# 메시지 서비스 (message) 를 잠시 내려놓음 (ctrl+c)
 
-#주문처리
-http localhost:8081/orders item=통닭 storeId=1   #Success
-http localhost:8081/orders item=피자 storeId=2   #Success
+# 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Success
 
-#주문상태 확인
-http localhost:8080/orders     # 주문상태 안바뀜 확인
+# 예약 상태 확인
+http GET localhost:8088/reservations    #메시지 서비스와 상관없이 예약 상태는 정상 확인
 
-#상점 서비스 기동
-cd 상점
-mvn spring-boot:run
-
-#주문상태 확인
-http localhost:8080/orders     # 모든 주문의 상태가 "배송됨"으로 확인
 ```
 
 # 운영
