@@ -11,13 +11,14 @@
       2. Kubernetes용  Deployment.yaml 을 작성하고 Kubernetes에 Deploy를 생성함.
           ![image](https://user-images.githubusercontent.com/80744273/119316250-b7928c00-bcb1-11eb-8caa-960c7326603e.png)
           
-          kubectl apply -f ./Deployment.yaml
+          kubectl apply -f ./Deployment.yaml (Kubernetes에 Deploy 생성함)
           ![image](https://user-images.githubusercontent.com/80744273/119315603-f8d66c00-bcb0-11eb-84e2-615134c6f360.png)
 
       4. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
           ![image](https://user-images.githubusercontent.com/80744273/119316167-97fb6380-bcb1-11eb-8adb-86f945a0f344.png)
+                    
+          kubectl apply -f ./Service.yaml  (Kubernetes에 Service 생성함)
           
-          kubectl apply -f ./Service.yaml
           ![image](https://user-images.githubusercontent.com/80744273/119315658-0c81d280-bcb1-11eb-8c0a-ee480277ee7d.png)
 
 
