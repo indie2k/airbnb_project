@@ -105,7 +105,7 @@
 
            
             ```
-            Deploy 생성
+            Service 생성
             kubectl apply -f service.yaml            
             ```             
             
