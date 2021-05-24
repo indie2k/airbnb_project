@@ -127,11 +127,11 @@ AirBnB 커버하기
 
 
 ### 이벤트 도출
-![image](https://user-images.githubusercontent.com/15603058/119296869-c4ed4d80-bc94-11eb-8760-a7fec482a75b.png)
+![image](https://user-images.githubusercontent.com/15603058/119298548-337fda80-bc98-11eb-9f96-7d583d156fb9.png)
 
 
 ### 부적격 이벤트 탈락
-![image](https://user-images.githubusercontent.com/15603058/119296948-ee0dde00-bc94-11eb-9aa3-3c48f4ae7d63.png)
+![image](https://user-images.githubusercontent.com/15603058/119298594-4f837c00-bc98-11eb-9f67-ec2e882e1f33.png)
 
     - 과정중 도출된 잘못된 도메인 이벤트들을 걸러내는 작업을 수행함
         - 등록시>RoomSearched, 예약시>RoomSelected, 예약시>ReservationDeliveried :  UI 의 이벤트이지, 업무적인 의미의 이벤트가 아니라서 제외
