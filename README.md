@@ -623,11 +623,12 @@ http localhost:8080/orders     # 모든 주문의 상태가 "배송됨"으로 �
 
 # 운영
 
+
 ## CI/CD 설정
 
 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD는 buildspec.yml을 이용한 AWS codebuild를 사용하였습니다.
 
-CodeBuild 프로젝트를 생성하고 AWS_ACCOUNT_ID, KUBE_URL, KUBE_TOKEN 환경 변수 세팅을 한다
+- CodeBuild 프로젝트를 생성하고 AWS_ACCOUNT_ID, KUBE_URL, KUBE_TOKEN 환경 변수 세팅을 한다
 ```
 SA 생성
 kubectl apply -f eks-admin-service-account.yml
@@ -649,6 +650,8 @@ buildspec.yml 파일
 마이크로 서비스 room의 yml 파일 이용하도록 세팅
 ```
 ![codebuild(buildspec)](https://user-images.githubusercontent.com/38099203/119283849-30292680-bc79-11eb-9f86-cbb715e74846.PNG)
+
+- codebuild 실행
 ```
 codebuild 프로젝트 및 빌드 이력
 ```
@@ -691,12 +694,12 @@ spec:
 ```
 kubectl get ns -L istio-injection
 kubectl label namespace airbnb istio-injection=enabled 
+```
 
 ![Circuit Breaker(istio-enjection)](https://user-images.githubusercontent.com/38099203/119295450-d6812600-bc91-11eb-8aad-46eeac968a41.PNG)
 
 ![Circuit Breaker(pod)](https://user-images.githubusercontent.com/38099203/119295568-0cbea580-bc92-11eb-9d2b-8580f3576b47.PNG)
 
-```
 
 * 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
 
@@ -708,7 +711,7 @@ kubectl exec -it siege -c siege -n airbnb -- /bin/bash
 ```
 
 
-- 동시사용자 1로 부하
+- 동시사용자 1로 부하 생성 시 모두 정상
 ```
 siege -c1 -t10S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 
@@ -729,7 +732,7 @@ HTTP/1.1 201     0.03 secs:     256 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     256 bytes ==> POST http://room:8080/rooms
 ```
 
-- 동시사용자 2로 부하 503 에러 발생
+- 동시사용자 2로 부하 생성 시 503 에러 168개 발생
 ```
 siege -c2 -t10S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 
@@ -757,6 +760,20 @@ HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 503     0.00 secs:      81 bytes ==> POST http://room:8080/rooms
+
+Lifting the server siege...
+Transactions:                   1904 hits
+Availability:                  91.89 %
+Elapsed time:                   9.89 secs
+Data transferred:               0.48 MB
+Response time:                  0.01 secs
+Transaction rate:             192.52 trans/sec
+Throughput:                     0.05 MB/sec
+Concurrency:                    1.98
+Successful transactions:        1904
+Failed transactions:             168
+Longest transaction:            0.03
+Shortest transaction:           0.00
 ```
 
 - kiali 화면에 서킷 브레이크 확인
@@ -854,6 +871,12 @@ Shortest transaction:           0.01
 
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 
+```
+kubectl delete destinationrules dr-room -n airbnb
+kubectl label namespace airbnb istio-injection-
+kubectl delete hpa room -n airbnb
+```
+
 - seige 로 배포작업 직전에 워크로드를 모니터링 함.
 ```
 siege -c100 -t60S -r10 -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
@@ -897,7 +920,7 @@ Longest transaction:            0.94
 Shortest transaction:           0.00
 
 ```
-배포기간중 Availability 가 평소 100%에서 87% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
+- 배포기간중 Availability 가 평소 100%에서 87% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함
 
 ```
 # deployment.yaml 의 readiness probe 의 설정:
@@ -933,17 +956,18 @@ Shortest transaction:           0.00
 # Self-healing (Liveness Probe)
 - room deployment.yml 파일 수정 
 ```
-콘테이너 실행후 /tmp/healthy 파일을 만들고 30초 후 삭제하도록 함
+콘테이너 실행 후 /tmp/healthy 파일을 만들고 
+90초 후 삭제
 livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
 ```
-![livenessprobe](https://user-images.githubusercontent.com/38099203/119303676-20253d00-bca1-11eb-8fae-aefb0b25a009.PNG)
+![deployment yml tmp healthy](https://user-images.githubusercontent.com/38099203/119318677-8ff0f300-bcb4-11eb-950a-e3c15feed325.PNG)
 
 - kubectl describe pod room -n airbnb 실행으로 확인
 ```
-컨테이너 실행 후 30초 동인은 정상이나 30초 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
-
+컨테이너 실행 후 90초 동인은 정상이나 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
+pod 정상 상태 일때 pod 진입하여 /tmp/healthy 파일 생성해주면 정상 상태 유지됨
 ```
 
-![30초 이후](https://user-images.githubusercontent.com/38099203/119304346-17813680-bca2-11eb-8382-4af444331182.PNG)
-![describe](https://user-images.githubusercontent.com/38099203/119304613-76df4680-bca2-11eb-8f06-ea2fa15593d3.PNG)
+![get pod tmp healthy](https://user-images.githubusercontent.com/38099203/119318781-a9923a80-bcb4-11eb-9783-65051ec0d6e8.PNG)
+![touch tmp healthy](https://user-images.githubusercontent.com/38099203/119319050-f118c680-bcb4-11eb-8bca-aa135c1e067e.PNG)
 
