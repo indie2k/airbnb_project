@@ -105,7 +105,7 @@
 
            
             ```
-            Service 생성
+            Service 확인
             kubectl apply -f service.yaml            
             ```             
             
