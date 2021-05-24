@@ -650,6 +650,10 @@ codebuild 프로젝트 및 빌드 이력
 ![codebuild(프로젝트)](https://user-images.githubusercontent.com/38099203/119283851-315a5380-bc79-11eb-9b2a-b4522d22d009.PNG)
 ![codebuild(로그)](https://user-images.githubusercontent.com/38099203/119283850-30c1bd00-bc79-11eb-9547-1ff1f62e48a4.PNG)
 
+- codebuild 빌드 내역
+![image](https://user-images.githubusercontent.com/31723044/119385401-087da100-bd01-11eb-8b69-ce222e6bb71e.png)
+![image](https://user-images.githubusercontent.com/31723044/119385274-e2580100-bd00-11eb-9fa6-b7446e84e213.png)
+
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
