@@ -111,7 +111,11 @@
             
             
           - API Gateay 엔드포인트 확인
-          
+           
+            ```
+            Service 
+            kubectl get svc -n airbnb           
+            ```                 
             ![image](https://user-images.githubusercontent.com/80744273/119318358-2a046b80-bcb4-11eb-9d46-ef2d498c2cff.png)
 
 
