@@ -18,7 +18,7 @@
           
             ![image](https://user-images.githubusercontent.com/80744273/119316167-97fb6380-bcb1-11eb-8adb-86f945a0f344.png)
             
-          - API GateWay 엔드포인트 확인
+          - API Gateay 엔드포인트 확인
           
             ![image](https://user-images.githubusercontent.com/80744273/119318358-2a046b80-bcb4-11eb-9d46-ef2d498c2cff.png)
 
