@@ -100,66 +100,16 @@
 
     - gateway 설정
       1. gateway 스프링부트 App을 추가하고 application.yml 에서 각 마이크로 서비스의 routes 를 설정하고 gateway 서버의 포트를 8080 으로 설정함.
-          spring:
-            profiles: docker
-            cloud:
-              gateway:
-                routes:
-                  - id: payment
-                    uri: http://payment:8080
-                    predicates:
-                      - Path=/payments/** 
-                  - id: room
-                    uri: http://room:8080
-                    predicates:
-                      - Path=/rooms/**, /reviews/**, /check/**
-                  - id: reservation
-                    uri: http://reservation:8080
-                    predicates:
-                      - Path=/reservations/**
-                  - id: message
-                    uri: http://message:8080
-                    predicates:
-                      - Path=/messages/** 
-                  - id: viewpage
-                    uri: http://viewpage:8080
-                    predicates:
-                      - Path= /roomviews/**
-                globalcors:
-                  corsConfigurations:
-                    '[/**]':
-                      allowedOrigins:
-                        - "*"
-                      allowedMethods:
-                        - "*"
-                      allowedHeaders:
-                        - "*"
-                      allowCredentials: true
-
-          server:
-            port: 8080
-            
-       2. gateway를 Deployment를 수행함.
+         ![image](https://user-images.githubusercontent.com/80744273/119316082-7dc18580-bcb1-11eb-83e7-64b6f8130ada.png)
+      2. Kubernetes  Deployment.yaml 을 작성함
+          ![image](https://user-images.githubusercontent.com/80744273/119316250-b7928c00-bcb1-11eb-8caa-960c7326603e.png)
+      3. Kubernetes Deployment 생성함. 
           kubectl apply -f ./Deployment.yaml
           ![image](https://user-images.githubusercontent.com/80744273/119315603-f8d66c00-bcb0-11eb-84e2-615134c6f360.png)
 
-       4. Service/LoadBalancer을 추가하여 엔드포인트를 생성함. 
-          apiVersion: v1
-          kind: Service
-          metadata:
-            name: gateway
-            namespace: airbnb
-            labels:
-              app: gateway
-          spec:
-            ports:
-              - port: 8080
-                targetPort: 8080
-            selector:
-              app: gateway
-            type:
-              LoadBalancer
-           
+      3. Service/LoadBalancer을 추가하여 엔드포인트를 생성함. 
+          ![image](https://user-images.githubusercontent.com/80744273/119316167-97fb6380-bcb1-11eb-8adb-86f945a0f344.png)
+          
           kubectl apply -f ./Service.yaml
           ![image](https://user-images.githubusercontent.com/80744273/119315658-0c81d280-bcb1-11eb-8c0a-ee480277ee7d.png)
 
