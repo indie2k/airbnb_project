@@ -568,4 +568,67 @@ drwxr-xr-x    1 root     root            17 May 24 15:42 ..
 ![b pod에서 파일생성 확인](https://user-images.githubusercontent.com/38099203/119373196-204e2880-bcf3-11eb-88f0-a1e91a89088a.PNG)
 
 
+- Config Map
+1: cofingmap.yml 파일 생성
+```
+kubectl apply -f cofingmap.yml
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airbnb-config
+  namespace: airbnb
+data:
+  # 속성과 비슷한 키; 각 키는 간단한 값으로 매핑됨
+  max_reservation_per_person: "10"
+  ui_properties_file_name: "user-interface.properties"
+
+  # 파일과 비슷한 키
+  room.properties: |
+    room.types=hotel,pansion,guesthouse
+    room.maximum-count=5    
+  kakao-interface.properties: |
+    kakao.font.color=blud
+    kakao.color.bad=yellow
+    kakao.textmode=true
+```
+
+2. deployment.yml에 적용하기
+
+```
+kubectl apply -f deployment.yml
+
+
+.......
+          env:
+            - name: MAX_RESERVATION_PER_PERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: airbnb-config
+                  key: max_reservation_per_person
+           - name: UI_PROPERTIES_FILE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: airbnb-config
+                  key: ui_properties_file_name
+          volumeMounts:
+          - mountPath: "/mnt/aws"
+            name: volume
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: aws-efs
+        # 파드 레벨에서 볼륨을 설정한 다음, 해당 파드 내의 컨테이너에 마운트한다.
+        - name: config
+          configMap:
+            # 마운트하려는 컨피그맵의 이름을 제공한다.
+            name: game-demo
+              # 컨피그맵에서 파일로 생성할 키 배열
+              items:
+                - key: "room.properties"
+                  path: "room.properties"
+                - key: "kakao-interface.properties"
+                  path: "kakao-interface.properties"
+```
 
