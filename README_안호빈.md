@@ -582,11 +582,11 @@ metadata:
   name: airbnb-config
   namespace: airbnb
 data:
-  # 속성과 비슷한 키; 각 키는 간단한 값으로 매핑됨
+  # 단일 key-value
   max_reservation_per_person: "10"
   ui_properties_file_name: "user-interface.properties"
 
-  # 파일과 비슷한 키
+  # 다수의 key-value
   room.properties: |
     room.types=hotel,pansion,guesthouse
     room.maximum-count=5    
@@ -604,6 +604,7 @@ kubectl apply -f deployment.yml
 
 .......
           env:
+			# cofingmap에 있는 단일 key-value
             - name: MAX_RESERVATION_PER_PERSION
               valueFrom:
                 configMapKeyRef:
@@ -621,12 +622,10 @@ kubectl apply -f deployment.yml
         - name: volume
           persistentVolumeClaim:
             claimName: aws-efs
-        # 파드 레벨에서 볼륨을 설정한 다음, 해당 파드 내의 컨테이너에 마운트한다.
         - name: config
           configMap:
-            # 마운트하려는 컨피그맵의 이름을 제공한다.
+            # cofingmap에 있는 다수의 key-value
             name: game-demo
-              # 컨피그맵에서 파일로 생성할 키 배열
               items:
                 - key: "room.properties"
                   path: "room.properties"
