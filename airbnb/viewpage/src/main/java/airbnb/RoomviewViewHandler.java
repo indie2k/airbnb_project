@@ -166,6 +166,32 @@ public class RoomviewViewHandler {
         }
     }
 
+    
+    //////////////////////////////////////////////////
+    // 방이 예약 되었을 때 Update -> RoomView TABLE
+    //////////////////////////////////////////////////
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenRoomReserved_then_UPDATE_6(@Payload RoomReserved roomReserved) {
+    
+        try {
+            if (!roomReserved.validate()) return;
+    
+            System.out.println("#######################");
+            System.out.println("###ROOM RESERVED ###" + roomReserved.getRoomId());
+            System.out.println("#######################");
+
+            Optional<Roomview> roomviewOptional = roomviewRepository.findById(roomReserved.getRoomId());
+            if( roomviewOptional.isPresent()) {
+                Roomview roomview = roomviewOptional.get();
+                roomview.setRoomStatus(roomReserved.getStatus());
+                roomviewRepository.save(roomview);
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     //////////////////////////////////////////////////
     // 방이 삭제 되었을 때 Delete -> RoomView TABLE
     //////////////////////////////////////////////////
