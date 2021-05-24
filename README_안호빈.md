@@ -318,16 +318,18 @@ Shortest transaction:           0.00
 # Self-healing (Liveness Probe)
 - room deployment.yml 파일 수정 
 ```
-콘테이너 실행후 /tmp/healthy 파일을 만들고 30초 후 삭제하도록 함
+콘테이너 실행 후 /tmp/healthy 파일을 만들고 
+90초 후 삭제
 livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
 ```
-![livenessprobe](https://user-images.githubusercontent.com/38099203/119303676-20253d00-bca1-11eb-8fae-aefb0b25a009.PNG)
+![deployment yml tmp healthy](https://user-images.githubusercontent.com/38099203/119318677-8ff0f300-bcb4-11eb-950a-e3c15feed325.PNG)
 
 - kubectl describe pod room -n airbnb 실행으로 확인
 ```
-컨테이너 실행 후 30초 동인은 정상이나 30초 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
-
+컨테이너 실행 후 90초 동인은 정상이나 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
+pod 정상 상태 일때 pod 진입하여 /tmp/healthy 파일 생성해주면 정상 상태 유지됨
 ```
 
-![30초 이후](https://user-images.githubusercontent.com/38099203/119304346-17813680-bca2-11eb-8382-4af444331182.PNG)
-![describe](https://user-images.githubusercontent.com/38099203/119304613-76df4680-bca2-11eb-8f06-ea2fa15593d3.PNG)
+![get pod tmp healthy](https://user-images.githubusercontent.com/38099203/119318781-a9923a80-bcb4-11eb-9783-65051ec0d6e8.PNG)
+![touch tmp healthy](https://user-images.githubusercontent.com/38099203/119319050-f118c680-bcb4-11eb-8bca-aa135c1e067e.PNG)
+
