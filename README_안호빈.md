@@ -4,7 +4,7 @@
 
 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD는 buildspec.yml을 이용한 AWS codebuild를 사용하였습니다.
 
-CodeBuild 프로젝트를 생성하고 AWS_ACCOUNT_ID, KUBE_URL, KUBE_TOKEN 환경 변수 세팅을 한다
+- CodeBuild 프로젝트를 생성하고 AWS_ACCOUNT_ID, KUBE_URL, KUBE_TOKEN 환경 변수 세팅을 한다
 ```
 SA 생성
 kubectl apply -f eks-admin-service-account.yml
@@ -26,6 +26,8 @@ buildspec.yml 파일
 마이크로 서비스 room의 yml 파일 이용하도록 세팅
 ```
 ![codebuild(buildspec)](https://user-images.githubusercontent.com/38099203/119283849-30292680-bc79-11eb-9f86-cbb715e74846.PNG)
+
+- codebuild 실행
 ```
 codebuild 프로젝트 및 빌드 이력
 ```
@@ -323,6 +325,4 @@ livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
 
 ![30초 이후](https://user-images.githubusercontent.com/38099203/119304346-17813680-bca2-11eb-8382-4af444331182.PNG)
 ![describe](https://user-images.githubusercontent.com/38099203/119304613-76df4680-bca2-11eb-8f06-ea2fa15593d3.PNG)
-
-
 
