@@ -68,12 +68,12 @@ spec:
 ```
 kubectl get ns -L istio-injection
 kubectl label namespace airbnb istio-injection=enabled 
+```
 
 ![Circuit Breaker(istio-enjection)](https://user-images.githubusercontent.com/38099203/119295450-d6812600-bc91-11eb-8aad-46eeac968a41.PNG)
 
 ![Circuit Breaker(pod)](https://user-images.githubusercontent.com/38099203/119295568-0cbea580-bc92-11eb-9d2b-8580f3576b47.PNG)
 
-```
 
 * 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
 
@@ -323,3 +323,6 @@ livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
 
 ![30초 이후](https://user-images.githubusercontent.com/38099203/119304346-17813680-bca2-11eb-8382-4af444331182.PNG)
 ![describe](https://user-images.githubusercontent.com/38099203/119304613-76df4680-bca2-11eb-8f06-ea2fa15593d3.PNG)
+
+
+
