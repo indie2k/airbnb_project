@@ -1,6 +1,6 @@
 ![image](https://user-images.githubusercontent.com/15603058/119284989-fefe2580-bc7b-11eb-99ca-7a9e4183c16f.jpg)
 
-# 예제 - 숙소예약
+# 숙소예약(AirBnB)
 
 본 예제는 MSA/DDD/Event Storming/EDA 를 포괄하는 분석/설계/구현/운영 전단계를 커버하도록 구성한 예제입니다.
 이는 클라우드 네이티브 애플리케이션의 개발에 요구되는 체크포인트들을 통과하기 위한 예시 답안을 포함합니다.
@@ -31,33 +31,29 @@
 AirBnB 커버하기
 
 기능적 요구사항
-1. 호스트가 임대할 숙소를 등록한다.
+1. 호스트가 임대할 숙소를 등록/수정/삭제한다.
 2. 고객이 숙소를 선택하여 예약한다.
-3. 고객이 결제한다.
-4. 예약이 되면 예약 내역이 호스트에게 전달된다.
+3. 예약과 동시에 결제가 진행된다.
+4. 예약이 되면 예약 내역(Message)이 전달된다.
 5. 고객이 예약을 취소할 수 있다.
-6. 고객이 예약을 변경할 수 있다.
-7. 호스트가 예약을 취소할 수 있다.
-8. 고객이 예약 상태를 조회한다.
-9. 호스트가 본인의 임대 현황을 조회한다.
-10. 예약 사항이 변경될 경우 알림을 보낸다.
-11. 사용자가 후기를 남길 수 있다.
+6. 예약 사항이 취소될 경우 취소 내역(Message)이 전달된다.
+7. 숙소에 후기(review)를 남길 수 있다.
+8. 전체적인 숙소에 대한 정보 및 예약 상태 등을 한 화면에서 확인 할 수 있다.(viewpage)
 
 비기능적 요구사항
 1. 트랜잭션
-    1. 결제가 되지 않은 주문건은 아예 예약이 성립되지 않아야 한다  Sync 호출 
+    1. 결제가 되지 않은 예약 건은 성립되지 않아야 한다.  (Sync 호출)
 1. 장애격리
-    1. 예약관리 기능이 수행되지 않더라도 주문은 365일 24시간 받을 수 있어야 한다  Async (event-driven), Eventual Consistency
-    1. 결제시스템이 과중되면 사용자를 잠시동안 받지 않고 결제를 잠시후에 하도록 유도한다  Circuit breaker, fallback
+    1. 숙소 등록 및 메시지 전송 기능이 수행되지 않더라도 예약은 365일 24시간 받을 수 있어야 한다  Async (event-driven), Eventual Consistency
+    1. 예약 시스템이 과중되면 사용자를 잠시동안 받지 않고 잠시 후에 하도록 유도한다  Circuit breaker, fallback
 1. 성능
-    1. 고객이 자주 예약관리에서 확인할 수 있는 예약상태를 예약시스템(프론트엔드)에서 확인할 수 있어야 한다  CQRS
-    1. 예약상태가 바뀔때마다 카톡 등으로 알림을 줄 수 있어야 한다  Event driven
+    1. 모든 방에 대한 정보 및 예약 상태 등을 한번에 확인할 수 있어야 한다  (CQRS)
+    1. 예약의 상태가 바뀔 때마다 메시지로 알림을 줄 수 있어야 한다  (Event driven)
 
 
 # 체크포인트
 
 - 분석 설계
-
 
   - 이벤트스토밍: 
     - 스티커 색상별 객체의 의미를 제대로 이해하여 헥사고날 아키텍처와의 연계 설계에 적절히 반영하고 있는가?
@@ -114,12 +110,11 @@ AirBnB 커버하기
 
 # 분석/설계
 
-
 ## AS-IS 조직 (Horizontally-Aligned)
-  ![image](https://user-images.githubusercontent.com/487999/79684144-2a893200-826a-11ea-9a01-79927d3a0107.png)
+  ![image](https://user-images.githubusercontent.com/77129832/119316165-96ca3680-bcb1-11eb-9a91-f2b627890bab.png)
 
-## TO-BE 조직 (Vertically-Aligned)
-  ![image](https://user-images.githubusercontent.com/487999/79684159-3543c700-826a-11ea-8d5f-a3fc0c4cad87.png)
+## TO-BE 조직 (Vertically-Aligned)  
+  ![image](https://user-images.githubusercontent.com/77129832/119315258-a09f6a00-bcb0-11eb-9940-c2a82f2f7d09.png)
 
 
 ## Event Storming 결과
@@ -149,61 +144,56 @@ AirBnB 커버하기
 ![image](https://user-images.githubusercontent.com/15603058/119300858-6c21b300-bc9c-11eb-9b3f-c85aff51658f.png)
 
     - 도메인 서열 분리 
-        - Core Domain:  reservation(front), room : 없어서는 안될 핵심 서비스이며, 연견 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservation 의 경우 1주일 1회 미만, room 의 경우 1개월 1회 미만
-        - Supporting Domain:   marketing, customer : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
-        - General Domain:   payment : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 (핑크색으로 이후 전환할 예정)
+        - Core Domain:  reservation, room : 없어서는 안될 핵심 서비스이며, 연간 Up-time SLA 수준을 99.999% 목표, 배포주기는 reservation 의 경우 1주일 1회 미만, room 의 경우 1개월 1회 미만
+        - Supporting Domain:   message, viewpage : 경쟁력을 내기위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함.
+        - General Domain:   payment : 결제서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 
 
 ### 폴리시 부착 (괄호는 수행주체, 폴리시 부착을 둘째단계에서 해놔도 상관 없음. 전체 연계가 초기에 드러남)
 
-![image](https://user-images.githubusercontent.com/487999/79683633-5aced180-8266-11ea-8f42-c769eb88dfb1.png)
+![image](https://user-images.githubusercontent.com/15603058/119303664-1b608900-bca1-11eb-8667-7545f32c9fb9.png)
 
 ### 폴리시의 이동과 컨텍스트 매핑 (점선은 Pub/Sub, 실선은 Req/Resp)
 
-![image](https://user-images.githubusercontent.com/487999/79683641-5f938580-8266-11ea-9fdb-4e80ff6642fe.png)
+![image](https://user-images.githubusercontent.com/15603058/119304604-73e45600-bca2-11eb-8f1d-607006919fab.png)
 
 ### 완성된 1차 모형
 
-![image](https://user-images.githubusercontent.com/487999/79683646-63bfa300-8266-11ea-9bc5-c0b650507ac8.png)
+![image](https://user-images.githubusercontent.com/15603058/119305002-0edd3000-bca3-11eb-9cc0-1ba8b17f2432.png)
 
     - View Model 추가
 
 ### 1차 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증
 
-![image](https://user-images.githubusercontent.com/487999/79684167-3ecd2f00-826a-11ea-806a-957362d197e3.png)
+![image](https://user-images.githubusercontent.com/15603058/119306321-f110ca80-bca4-11eb-804c-a965220bad61.png)
 
-    - 고객이 메뉴를 선택하여 주문한다 (ok)
-    - 고객이 결제한다 (ok)
-    - 주문이 되면 주문 내역이 입점상점주인에게 전달된다 (ok)
-    - 상점주인이 확인하여 요리해서 배달 출발한다 (ok)
-
-![image](https://user-images.githubusercontent.com/487999/79684170-47256a00-826a-11ea-9777-e16fafff519a.png)
-    - 고객이 주문을 취소할 수 있다 (ok)
-    - 주문이 취소되면 배달이 취소된다 (ok)
-    - 고객이 주문상태를 중간중간 조회한다 (View-green sticker 의 추가로 ok) 
-    - 주문상태가 바뀔 때 마다 카톡으로 알림을 보낸다 (?)
-
-
+    - 호스트가 임대할 숙소를 등록/수정/삭제한다.(ok)
+    - 고객이 숙소를 선택하여 예약한다.(ok)
+    - 예약과 동시에 결제가 진행된다.(ok)
+    - 예약이 되면 예약 내역(Message)이 전달된다.(?)
+    - 고객이 예약을 취소할 수 있다.(ok)
+    - 예약 사항이 취소될 경우 취소 내역(Message)이 전달된다.(?)
+    - 숙소에 후기(review)를 남길 수 있다.(ok)
+    - 전체적인 숙소에 대한 정보 및 예약 상태 등을 한 화면에서 확인 할 수 있다.(View-green Sticker 추가로 ok)
+    
 ### 모델 수정
 
-![image](https://user-images.githubusercontent.com/487999/79684176-4e4c7800-826a-11ea-8deb-b7b053e5d7c6.png)
+![image](https://user-images.githubusercontent.com/15603058/119307481-b740c380-bca6-11eb-9ee6-fda446e299bc.png)
     
     - 수정된 모델은 모든 요구사항을 커버함.
 
 ### 비기능 요구사항에 대한 검증
 
-![image](https://user-images.githubusercontent.com/487999/79684184-5c9a9400-826a-11ea-8d87-2ed1e44f4562.png)
+![image](https://user-images.githubusercontent.com/15603058/119311800-79df3480-bcac-11eb-9c1b-0382d981f92f.png)
 
-    - 마이크로 서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
-        - 고객 주문시 결제처리:  결제가 완료되지 않은 주문은 절대 받지 않는다는 경영자의 오랜 신념(?) 에 따라, ACID 트랜잭션 적용. 주문와료시 결제처리에 대해서는 Request-Response 방식 처리
-        - 결제 완료시 점주연결 및 배송처리:  App(front) 에서 Store 마이크로서비스로 주문요청이 전달되는 과정에 있어서 Store 마이크로 서비스가 별도의 배포주기를 가지기 때문에 Eventual Consistency 방식으로 트랜잭션 처리함.
-        - 나머지 모든 inter-microservice 트랜잭션: 주문상태, 배달상태 등 모든 이벤트에 대해 카톡을 처리하는 등, 데이터 일관성의 시점이 크리티컬하지 않은 모든 경우가 대부분이라 판단, Eventual Consistency 를 기본으로 채택함.
-
-
+- 마이크로 서비스를 넘나드는 시나리오에 대한 트랜잭션 처리
+- 고객 예약시 결제처리:  결제가 완료되지 않은 예약은 절대 받지 않는다고 결정하여, ACID 트랜잭션 적용. 예약 완료시 사전에 방 상태를 확인하는 것과 결제처리에 대해서는 Request-Response 방식 처리
+- 결제 완료시 Host 연결 및 예약처리:  reservation 에서 room 마이크로서비스로 예약요청이 전달되는 과정에 있어서 room 마이크로 서비스가 별도의 배포주기를 가지기 때문에 Eventual Consistency 방식으로 트랜잭션 처리함.
+- 나머지 모든 inter-microservice 트랜잭션: 예약상태, 후기처리 등 모든 이벤트에 대해 데이터 일관성의 시점이 크리티컬하지 않은 모든 경우가 대부분이라 판단, Eventual Consistency 를 기본으로 채택함.
 
 
 ## 헥사고날 아키텍처 다이어그램 도출
-    
-![image](https://user-images.githubusercontent.com/487999/79684772-eba9ab00-826e-11ea-9405-17e2bf39ec76.png)
+
+![image](https://user-images.githubusercontent.com/80744273/119319091-fc6bf200-bcb4-11eb-9dac-0995c84a82e0.png)
 
 
     - Chris Richardson, MSA Patterns 참고하여 Inbound adaptor와 Outbound adaptor를 구분함
@@ -213,87 +203,229 @@ AirBnB 커버하기
 
 # 구현:
 
-분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트와 파이선으로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 808n 이다)
+분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 808n 이다)
 
 ```
-cd app
-mvn spring-boot:run
-
-cd pay
-mvn spring-boot:run 
-
-cd store
-mvn spring-boot:run  
-
-cd customer
-python policy-handler.py 
+   mvn spring-boot:run
 ```
+
+## CQRS
+
+숙소(Room) 의 사용가능 여부, 리뷰 및 예약/결재 등 총 Status 에 대하여 고객(Customer)이 조회 할 수 있도록 CQRS 로 구현하였다.
+- room, review, reservation, payment 개별 Aggregate Status 를 통합 조회하여 성능 Issue 를 사전에 예방할 수 있다.
+- 비동기식으로 처리되어 발행된 이벤트 기반 Kafka 를 통해 수신/처리 되어 별도 Table 에 관리한다
+- Table 모델링 (ROOMVIEW)
+
+  ![image](https://user-images.githubusercontent.com/77129832/119319352-4b198c00-bcb5-11eb-93bc-ff0657feeb9f.png)
+- viewpage MSA ViewHandler 를 통해 구현 ("RoomRegistered" 이벤트 발생 시, Pub/Sub 기반으로 별도 Roomview 테이블에 저장)
+  ![image](https://user-images.githubusercontent.com/77129832/119321162-4d7ce580-bcb7-11eb-9030-29ee6272c40d.png)
+  ![image](https://user-images.githubusercontent.com/31723044/119350185-fccab400-bcd9-11eb-8269-61868de41cc7.png)
+- 실제로 view 페이지를 조회해 보면 모든 room에 대한 전반적인 예약 상태, 결제 상태, 리뷰 건수 등의 정보를 종합적으로 알 수 있다
+  ![image](https://user-images.githubusercontent.com/31723044/119349766-7f9f3f00-bcd9-11eb-805c-c672af7bf509.png)
+
+
+## 게이트웨이(Gateway)
+
+      1. gateway 스프링부트 App을 추가 후 application.yaml내에 각 마이크로 서비스의 routes 를 추가하고 gateway 서버의 포트를 8080 으로 설정함
+       
+          - application.yaml 예시
+            ```
+            spring:
+              profiles: docker
+              cloud:
+                gateway:
+                  routes:
+                    - id: payment
+                      uri: http://payment:8080
+                      predicates:
+                        - Path=/payments/** 
+                    - id: room
+                      uri: http://room:8080
+                      predicates:
+                        - Path=/rooms/**, /reviews/**, /check/**
+                    - id: reservation
+                      uri: http://reservation:8080
+                      predicates:
+                        - Path=/reservations/**
+                    - id: message
+                      uri: http://message:8080
+                      predicates:
+                        - Path=/messages/** 
+                    - id: viewpage
+                      uri: http://viewpage:8080
+                      predicates:
+                        - Path= /roomviews/**
+                  globalcors:
+                    corsConfigurations:
+                      '[/**]':
+                        allowedOrigins:
+                          - "*"
+                        allowedMethods:
+                          - "*"
+                        allowedHeaders:
+                          - "*"
+                        allowCredentials: true
+
+            server:
+              port: 8080            
+            ```
+         
+      2. Kubernetes용 Deployment.yaml 을 작성하고 Kubernetes에 Deploy를 생성함
+          - Deployment.yaml 예시
+          
+
+            ```
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: gateway
+              namespace: airbnb
+              labels:
+                app: gateway
+            spec:
+              replicas: 1
+              selector:
+                matchLabels:
+                  app: gateway
+              template:
+                metadata:
+                  labels:
+                    app: gateway
+                spec:
+                  containers:
+                    - name: gateway
+                      image: 247785678011.dkr.ecr.us-east-2.amazonaws.com/gateway:1.0
+                      ports:
+                        - containerPort: 8080
+            ```               
+            
+
+            ```
+            Deploy 생성
+            kubectl apply -f deployment.yaml
+            ```     
+          - Kubernetes에 생성된 Deploy. 확인
+            
+            ![image](https://user-images.githubusercontent.com/80744273/119321943-1d821200-bcb8-11eb-98d7-bf8def9ebf80.png)
+            
+      3. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
+          - Service.yaml 예시
+          
+            ```
+            apiVersion: v1
+              kind: Service
+              metadata:
+                name: gateway
+                namespace: airbnb
+                labels:
+                  app: gateway
+              spec:
+                ports:
+                  - port: 8080
+                    targetPort: 8080
+                selector:
+                  app: gateway
+                type:
+                  LoadBalancer           
+            ```             
+
+           
+            ```
+            Deploy 생성
+            kubectl apply -f service.yaml            
+            ```             
+            
+            
+          - API Gateay 엔드포인트 확인
+           
+            ```
+            Service 
+            kubectl get svc -n airbnb           
+            ```                 
+            ![image](https://user-images.githubusercontent.com/80744273/119318358-2a046b80-bcb4-11eb-9d46-ef2d498c2cff.png)
 
 ## DDD 의 적용
 
-- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (예시는 pay 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 하지만, 일부 구현에 있어서 영문이 아닌 경우는 실행이 불가능한 경우가 있기 때문에 계속 사용할 방법은 아닌것 같다. (Maven pom.xml, Kafka의 topic id, FeignClient 의 서비스 id 등은 한글로 식별자를 사용하는 경우 오류가 발생하는 것을 확인하였다)
+- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다. (예시는 room 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 현실에서 발생가는한 이벤트에 의하여 마이크로 서비스들이 상호 작용하기 좋은 모델링으로 구현을 하였다.
 
 ```
-package fooddelivery;
+package airbnb;
 
 import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
-import java.util.List;
 
 @Entity
-@Table(name="결제이력_table")
-public class 결제이력 {
+@Table(name="Room_table")
+public class Room {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long id;
-    private String orderId;
-    private Double 금액;
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long roomId;       // 방ID
+    private String status;     // 방 상태
+    private String desc;       // 방 상세 설명
+    private Long reviewCnt;    // 리뷰 건수
+    private String lastAction; // 최종 작업
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-    public String getOrderId() {
-        return orderId;
+    public Long getRoomId() {
+        return roomId;
     }
 
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
     }
-    public Double get금액() {
-        return 금액;
-    }
-
-    public void set금액(Double 금액) {
-        this.금액 = 금액;
+    public String getStatus() {
+        return status;
     }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+    public Long getReviewCnt() {
+        return reviewCnt;
+    }
+
+    public void setReviewCnt(Long reviewCnt) {
+        this.reviewCnt = reviewCnt;
+    }
+    public String getLastAction() {
+        return lastAction;
+    }
+
+    public void setLastAction(String lastAction) {
+        this.lastAction = lastAction;
+    }
 }
 
 ```
 - Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
 ```
-package fooddelivery;
+package airbnb;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-public interface 결제이력Repository extends PagingAndSortingRepository<결제이력, Long>{
+@RepositoryRestResource(collectionResourceRel="rooms", path="rooms")
+public interface RoomRepository extends PagingAndSortingRepository<Room, Long>{
+
 }
 ```
 - 적용 후 REST API 의 테스트
 ```
-# app 서비스의 주문처리
-http localhost:8081/orders item="통닭"
+# room 서비스의 room 등록
+http POST http://localhost:8088/rooms desc="Beautiful House"  
 
-# store 서비스의 배달처리
-http localhost:8083/주문처리s orderId=1
+# reservation 서비스의 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve
 
-# 주문 상태 확인
-http localhost:8081/orders/1
+# reservation 서비스의 예약 상태 확인
+http GET http://localhost:8088/reservations
 
 ```
 
@@ -367,38 +499,85 @@ CMD ["python", "policy-handler.py"]
 ```
 
 
-## 동기식 호출 과 Fallback 처리
+## 동기식 호출(Sync) 과 Fallback 처리
 
-분석단계에서의 조건 중 하나로 주문(app)->결제(pay) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+분석 단계에서의 조건 중 하나로 예약 시 숙소(room) 간의 예약 가능 상태 확인 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 또한 예약(reservation) -> 결제(payment) 서비스도 동기식으로 처리하기로 하였다.
 
-- 결제서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
+- 룸, 결제 서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 
 ```
-# (app) 결제이력Service.java
+# PaymentService.java
 
-package fooddelivery.external;
+package airbnb.external;
 
-@FeignClient(name="pay", url="http://localhost:8082")//, fallback = 결제이력ServiceFallback.class)
-public interface 결제이력Service {
+<import문 생략>
 
-    @RequestMapping(method= RequestMethod.POST, path="/결제이력s")
-    public void 결제(@RequestBody 결제이력 pay);
+@FeignClient(name="Payment", url="${prop.room.url}")
+public interface PaymentService {
+
+    @RequestMapping(method= RequestMethod.POST, path="/payments")
+    public void approvePayment(@RequestBody Payment payment);
 
 }
+
+# RoomService.java
+
+package airbnb.external;
+
+<import문 생략>
+
+@FeignClient(name="Room", url="${prop.room.url}")
+public interface RoomService {
+
+    @RequestMapping(method= RequestMethod.GET, path="/check/chkAndReqReserve")
+    public boolean chkAndReqReserve(@RequestParam("roomId") long roomId);
+
+}
+
+
 ```
 
-- 주문을 받은 직후(@PostPersist) 결제를 요청하도록 처리
+- 예약 요청을 받은 직후(@PostPersist) 가능상태 확인 및 결제를 동기(Sync)로 요청하도록 처리
 ```
-# Order.java (Entity)
+# Reservation.java (Entity)
 
     @PostPersist
     public void onPostPersist(){
 
-        fooddelivery.external.결제이력 pay = new fooddelivery.external.결제이력();
-        pay.setOrderId(getOrderId());
-        
-        Application.applicationContext.getBean(fooddelivery.external.결제이력Service.class)
-                .결제(pay);
+        ////////////////////////////////
+        // RESERVATION에 INSERT 된 경우 
+        ////////////////////////////////
+
+        ////////////////////////////////////
+        // 예약 요청(reqReserve) 들어온 경우
+        ////////////////////////////////////
+
+        // 해당 ROOM이 Available한 상태인지 체크
+        boolean result = ReservationApplication.applicationContext.getBean(airbnb.external.RoomService.class)
+                        .chkAndReqReserve(this.getRoomId());
+        System.out.println("######## Check Result : " + result);
+
+        if(result) { 
+
+            // 예약 가능한 상태인 경우(Available)
+
+            //////////////////////////////
+            // PAYMENT 결제 진행 (POST방식) - SYNC 호출
+            //////////////////////////////
+            airbnb.external.Payment payment = new airbnb.external.Payment();
+            payment.setRsvId(this.getRsvId());
+            payment.setRoomId(this.getRoomId());
+            payment.setStatus("paid");
+            ReservationApplication.applicationContext.getBean(airbnb.external.PaymentService.class)
+                .approvePayment(payment);
+
+            /////////////////////////////////////
+            // 이벤트 발행 --> ReservationCreated
+            /////////////////////////////////////
+            ReservationCreated reservationCreated = new ReservationCreated();
+            BeanUtils.copyProperties(this, reservationCreated);
+            reservationCreated.publishAfterCommit();
+        }
     }
 ```
 
@@ -408,17 +587,15 @@ public interface 결제이력Service {
 ```
 # 결제 (pay) 서비스를 잠시 내려놓음 (ctrl+c)
 
-#주문처리
-http localhost:8081/orders item=통닭 storeId=1   #Fail
-http localhost:8081/orders item=피자 storeId=2   #Fail
+# 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Fail
 
-#결제서비스 재기동
-cd 결제
+# 결제서비스 재기동
+cd payment
 mvn spring-boot:run
 
-#주문처리
-http localhost:8081/orders item=통닭 storeId=1   #Success
-http localhost:8081/orders item=피자 storeId=2   #Success
+# 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Success
 ```
 
 - 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
@@ -429,95 +606,91 @@ http localhost:8081/orders item=피자 storeId=2   #Success
 ## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
 
 
-결제가 이루어진 후에 상점시스템으로 이를 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 상점 시스템의 처리를 위하여 결제주문이 블로킹 되지 않아도록 처리한다.
+결제가 이루어진 후에 숙소 시스템의 상태가 업데이트 되고, 예약 시스템의 상태가 업데이트 되며, 예약 및 취소 메시지가 전송되는 시스템과의 통신 행위는 비동기식으로 처리한다.
  
-- 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
+- 이를 위하여 결제가 승인되면 결제가 승인 되었다는 이벤트를 카프카로 송출한다. (Publish)
  
 ```
-package fooddelivery;
+# Payment.java
+
+package airbnb;
+
+import javax.persistence.*;
+import org.springframework.beans.BeanUtils;
 
 @Entity
-@Table(name="결제이력_table")
-public class 결제이력 {
+@Table(name="Payment_table")
+public class Payment {
 
- ...
-    @PrePersist
-    public void onPrePersist(){
-        결제승인됨 결제승인됨 = new 결제승인됨();
-        BeanUtils.copyProperties(this, 결제승인됨);
-        결제승인됨.publish();
+    ....
+
+    @PostPersist
+    public void onPostPersist(){
+        ////////////////////////////
+        // 결제 승인 된 경우
+        ////////////////////////////
+
+        // 이벤트 발행 -> PaymentApproved
+        PaymentApproved paymentApproved = new PaymentApproved();
+        BeanUtils.copyProperties(this, paymentApproved);
+        paymentApproved.publishAfterCommit();
     }
-
+    
+    ....
 }
 ```
-- 상점 서비스에서는 결제승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
+
+- 예약 시스템에서는 결제 승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
 
 ```
-package fooddelivery;
+# Reservation.java
 
-...
+package airbnb;
 
-@Service
-public class PolicyHandler{
+    @PostUpdate
+    public void onPostUpdate(){
+    
+        ....
 
-    @StreamListener(KafkaProcessor.INPUT)
-    public void whenever결제승인됨_주문정보받음(@Payload 결제승인됨 결제승인됨){
+        if(this.getStatus().equals("reserved")) {
 
-        if(결제승인됨.isMe()){
-            System.out.println("##### listener 주문정보받음 : " + 결제승인됨.toJson());
-            // 주문 정보를 받았으니, 요리를 슬슬 시작해야지..
-            
+            ////////////////////
+            // 예약 확정된 경우
+            ////////////////////
+
+            // 이벤트 발생 --> ReservationConfirmed
+            ReservationConfirmed reservationConfirmed = new ReservationConfirmed();
+            BeanUtils.copyProperties(this, reservationConfirmed);
+            reservationConfirmed.publishAfterCommit();
         }
+        
+        ....
+        
     }
 
-}
-
-```
-실제 구현을 하자면, 카톡 등으로 점주는 노티를 받고, 요리를 마친후, 주문 상태를 UI에 입력할테니, 우선 주문정보를 DB에 받아놓은 후, 이후 처리는 해당 Aggregate 내에서 하면 되겠다.:
-  
-```
-  @Autowired 주문관리Repository 주문관리Repository;
-  
-  @StreamListener(KafkaProcessor.INPUT)
-  public void whenever결제승인됨_주문정보받음(@Payload 결제승인됨 결제승인됨){
-
-      if(결제승인됨.isMe()){
-          카톡전송(" 주문이 왔어요! : " + 결제승인됨.toString(), 주문.getStoreId());
-
-          주문관리 주문 = new 주문관리();
-          주문.setId(결제승인됨.getOrderId());
-          주문관리Repository.save(주문);
-      }
-  }
-
 ```
 
-상점 시스템은 주문/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 상점시스템이 유지보수로 인해 잠시 내려간 상태라도 주문을 받는데 문제가 없다:
+그 외 메시지 서비스는 예약/결제와 완전히 분리되어있으며, 이벤트 수신에 따라 처리되기 때문에, 메시지 서비스가 유지보수로 인해 잠시 내려간 상태 라도 예약을 받는데 문제가 없다.
+
 ```
-# 상점 서비스 (store) 를 잠시 내려놓음 (ctrl+c)
+# 메시지 서비스 (message) 를 잠시 내려놓음 (ctrl+c)
 
-#주문처리
-http localhost:8081/orders item=통닭 storeId=1   #Success
-http localhost:8081/orders item=피자 storeId=2   #Success
+# 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Success
 
-#주문상태 확인
-http localhost:8080/orders     # 주문상태 안바뀜 확인
+# 예약 상태 확인
+http GET localhost:8088/reservations    #메시지 서비스와 상관없이 예약 상태는 정상 확인
 
-#상점 서비스 기동
-cd 상점
-mvn spring-boot:run
-
-#주문상태 확인
-http localhost:8080/orders     # 모든 주문의 상태가 "배송됨"으로 확인
 ```
 
 # 운영
+
 
 ## CI/CD 설정
 
 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD는 buildspec.yml을 이용한 AWS codebuild를 사용하였습니다.
 
-CodeBuild 프로젝트를 생성하고 AWS_ACCOUNT_ID, KUBE_URL, KUBE_TOKEN 환경 변수 세팅을 한다
+- CodeBuild 프로젝트를 생성하고 AWS_ACCOUNT_ID, KUBE_URL, KUBE_TOKEN 환경 변수 세팅을 한다
 ```
 SA 생성
 kubectl apply -f eks-admin-service-account.yml
@@ -539,6 +712,8 @@ buildspec.yml 파일
 마이크로 서비스 room의 yml 파일 이용하도록 세팅
 ```
 ![codebuild(buildspec)](https://user-images.githubusercontent.com/38099203/119283849-30292680-bc79-11eb-9f86-cbb715e74846.PNG)
+
+- codebuild 실행
 ```
 codebuild 프로젝트 및 빌드 이력
 ```
@@ -581,12 +756,12 @@ spec:
 ```
 kubectl get ns -L istio-injection
 kubectl label namespace airbnb istio-injection=enabled 
+```
 
 ![Circuit Breaker(istio-enjection)](https://user-images.githubusercontent.com/38099203/119295450-d6812600-bc91-11eb-8aad-46eeac968a41.PNG)
 
 ![Circuit Breaker(pod)](https://user-images.githubusercontent.com/38099203/119295568-0cbea580-bc92-11eb-9d2b-8580f3576b47.PNG)
 
-```
 
 * 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
 
@@ -598,7 +773,7 @@ kubectl exec -it siege -c siege -n airbnb -- /bin/bash
 ```
 
 
-- 동시사용자 1로 부하
+- 동시사용자 1로 부하 생성 시 모두 정상
 ```
 siege -c1 -t10S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 
@@ -619,7 +794,7 @@ HTTP/1.1 201     0.03 secs:     256 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     256 bytes ==> POST http://room:8080/rooms
 ```
 
-- 동시사용자 2로 부하 503 에러 발생
+- 동시사용자 2로 부하 생성 시 503 에러 168개 발생
 ```
 siege -c2 -t10S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 
@@ -647,6 +822,20 @@ HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 503     0.00 secs:      81 bytes ==> POST http://room:8080/rooms
+
+Lifting the server siege...
+Transactions:                   1904 hits
+Availability:                  91.89 %
+Elapsed time:                   9.89 secs
+Data transferred:               0.48 MB
+Response time:                  0.01 secs
+Transaction rate:             192.52 trans/sec
+Throughput:                     0.05 MB/sec
+Concurrency:                    1.98
+Successful transactions:        1904
+Failed transactions:             168
+Longest transaction:            0.03
+Shortest transaction:           0.00
 ```
 
 - kiali 화면에 서킷 브레이크 확인
@@ -744,6 +933,12 @@ Shortest transaction:           0.01
 
 * 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 
+```
+kubectl delete destinationrules dr-room -n airbnb
+kubectl label namespace airbnb istio-injection-
+kubectl delete hpa room -n airbnb
+```
+
 - seige 로 배포작업 직전에 워크로드를 모니터링 함.
 ```
 siege -c100 -t60S -r10 -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
@@ -787,7 +982,7 @@ Longest transaction:            0.94
 Shortest transaction:           0.00
 
 ```
-배포기간중 Availability 가 평소 100%에서 87% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함:
+- 배포기간중 Availability 가 평소 100%에서 87% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함
 
 ```
 # deployment.yaml 의 readiness probe 의 설정:
@@ -823,17 +1018,18 @@ Shortest transaction:           0.00
 # Self-healing (Liveness Probe)
 - room deployment.yml 파일 수정 
 ```
-콘테이너 실행후 /tmp/healthy 파일을 만들고 30초 후 삭제하도록 함
+콘테이너 실행 후 /tmp/healthy 파일을 만들고 
+90초 후 삭제
 livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
 ```
-![livenessprobe](https://user-images.githubusercontent.com/38099203/119303676-20253d00-bca1-11eb-8fae-aefb0b25a009.PNG)
+![deployment yml tmp healthy](https://user-images.githubusercontent.com/38099203/119318677-8ff0f300-bcb4-11eb-950a-e3c15feed325.PNG)
 
 - kubectl describe pod room -n airbnb 실행으로 확인
 ```
-컨테이너 실행 후 30초 동인은 정상이나 30초 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
-
+컨테이너 실행 후 90초 동인은 정상이나 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
+pod 정상 상태 일때 pod 진입하여 /tmp/healthy 파일 생성해주면 정상 상태 유지됨
 ```
 
-![30초 이후](https://user-images.githubusercontent.com/38099203/119304346-17813680-bca2-11eb-8382-4af444331182.PNG)
-![describe](https://user-images.githubusercontent.com/38099203/119304613-76df4680-bca2-11eb-8f06-ea2fa15593d3.PNG)
+![get pod tmp healthy](https://user-images.githubusercontent.com/38099203/119318781-a9923a80-bcb4-11eb-9783-65051ec0d6e8.PNG)
+![touch tmp healthy](https://user-images.githubusercontent.com/38099203/119319050-f118c680-bcb4-11eb-8bca-aa135c1e067e.PNG)
 

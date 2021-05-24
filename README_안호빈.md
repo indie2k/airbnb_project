@@ -87,7 +87,7 @@ kubectl exec -it siege -c siege -n airbnb -- /bin/bash
 ```
 
 
-- 동시사용자 1로 부하
+- 동시사용자 1로 부하 생성 시 모두 정상
 ```
 siege -c1 -t10S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 
@@ -108,7 +108,7 @@ HTTP/1.1 201     0.03 secs:     256 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     256 bytes ==> POST http://room:8080/rooms
 ```
 
-- 동시사용자 2로 부하 503 에러 발생
+- 동시사용자 2로 부하 생성 시 503 에러 168개 발생
 ```
 siege -c2 -t10S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 
@@ -136,6 +136,20 @@ HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 201     0.02 secs:     258 bytes ==> POST http://room:8080/rooms
 HTTP/1.1 503     0.00 secs:      81 bytes ==> POST http://room:8080/rooms
+
+Lifting the server siege...
+Transactions:                   1904 hits
+Availability:                  91.89 %
+Elapsed time:                   9.89 secs
+Data transferred:               0.48 MB
+Response time:                  0.01 secs
+Transaction rate:             192.52 trans/sec
+Throughput:                     0.05 MB/sec
+Concurrency:                    1.98
+Successful transactions:        1904
+Failed transactions:             168
+Longest transaction:            0.03
+Shortest transaction:           0.00
 ```
 
 - kiali 화면에 서킷 브레이크 확인
@@ -318,16 +332,18 @@ Shortest transaction:           0.00
 # Self-healing (Liveness Probe)
 - room deployment.yml 파일 수정 
 ```
-콘테이너 실행후 /tmp/healthy 파일을 만들고 30초 후 삭제하도록 함
+콘테이너 실행 후 /tmp/healthy 파일을 만들고 
+90초 후 삭제
 livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
 ```
-![livenessprobe](https://user-images.githubusercontent.com/38099203/119303676-20253d00-bca1-11eb-8fae-aefb0b25a009.PNG)
+![deployment yml tmp healthy](https://user-images.githubusercontent.com/38099203/119318677-8ff0f300-bcb4-11eb-950a-e3c15feed325.PNG)
 
 - kubectl describe pod room -n airbnb 실행으로 확인
 ```
-컨테이너 실행 후 30초 동인은 정상이나 30초 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
-
+컨테이너 실행 후 90초 동인은 정상이나 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
+pod 정상 상태 일때 pod 진입하여 /tmp/healthy 파일 생성해주면 정상 상태 유지됨
 ```
 
-![30초 이후](https://user-images.githubusercontent.com/38099203/119304346-17813680-bca2-11eb-8382-4af444331182.PNG)
-![describe](https://user-images.githubusercontent.com/38099203/119304613-76df4680-bca2-11eb-8f06-ea2fa15593d3.PNG)
+![get pod tmp healthy](https://user-images.githubusercontent.com/38099203/119318781-a9923a80-bcb4-11eb-9783-65051ec0d6e8.PNG)
+![touch tmp healthy](https://user-images.githubusercontent.com/38099203/119319050-f118c680-bcb4-11eb-8bca-aa135c1e067e.PNG)
+
