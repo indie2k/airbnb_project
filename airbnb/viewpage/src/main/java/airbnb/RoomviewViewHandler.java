@@ -193,6 +193,31 @@ public class RoomviewViewHandler {
     }
 
     //////////////////////////////////////////////////
+    // 방이 취소 되었을 때 Update -> RoomView TABLE
+    //////////////////////////////////////////////////
+    @StreamListener(KafkaProcessor.INPUT)
+    public void whenRoomCancelled_then_UPDATE_6(@Payload RoomCancelled roomCancelled) {
+    
+        try {
+            if (!roomCancelled.validate()) return;
+    
+            System.out.println("#######################");
+            System.out.println("###ROOM CANCELLED ###" + roomCancelled.getRoomId());
+            System.out.println("#######################");
+
+            Optional<Roomview> roomviewOptional = roomviewRepository.findById(roomCancelled.getRoomId());
+            if( roomviewOptional.isPresent()) {
+                Roomview roomview = roomviewOptional.get();
+                roomview.setRoomStatus(roomCancelled.getStatus());
+                roomviewRepository.save(roomview);
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    //////////////////////////////////////////////////
     // 방이 삭제 되었을 때 Delete -> RoomView TABLE
     //////////////////////////////////////////////////
     @StreamListener(KafkaProcessor.INPUT)
