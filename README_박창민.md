@@ -84,22 +84,23 @@
             
       3. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
           - Service.yaml 예시
+          -
             ```
-           apiVersion: v1
-          kind: Service
-          metadata:
-            name: gateway
-            namespace: airbnb
-            labels:
-              app: gateway
-          spec:
-            ports:
-              - port: 8080
-                targetPort: 8080
-            selector:
-              app: gateway
-            type:
-              LoadBalancer           
+            apiVersion: v1
+              kind: Service
+              metadata:
+                name: gateway
+                namespace: airbnb
+                labels:
+                  app: gateway
+              spec:
+                ports:
+                  - port: 8080
+                    targetPort: 8080
+                selector:
+                  app: gateway
+                type:
+                  LoadBalancer           
             ```             
 
            
