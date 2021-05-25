@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: viewpage
-          image: 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user05-viewpage:1.0
+          image: 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user05-viewpage:2.0
           ports:
             - containerPort: 8080
           readinessProbe:

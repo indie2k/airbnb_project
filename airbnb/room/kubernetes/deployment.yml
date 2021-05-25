@@ -17,9 +17,20 @@ spec:
     spec:
       containers:
         - name: room
-          image: 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user05-room:1.0
+          image: 052937454741.dkr.ecr.ap-northeast-2.amazonaws.com/user05-room:2.0
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "256Mi"
+            limits:
+              cpu: "2500m"
+              memory: "512Mi"
+#          args:
+#            - /bin/sh
+#            - -c
+#            - touch /tmp/healthy; sleep 60; rm -rf /tmp/healthy; sleep 600
           readinessProbe:
             httpGet:
               path: '/actuator/health'
@@ -32,6 +43,10 @@ spec:
             httpGet:
               path: '/actuator/health'
               port: 8080
+#            exec:
+#              command:
+#              - cat
+#              - /tmp/healthy
             initialDelaySeconds: 120
             timeoutSeconds: 2
             periodSeconds: 5
