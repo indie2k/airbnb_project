@@ -224,8 +224,7 @@ AirBnB 커버하기
   ![image](https://user-images.githubusercontent.com/31723044/119357063-1b34ad80-bce2-11eb-94fb-a587261ab56f.png)
 
 
-## 게이트웨이(Gateway)
-
+## API 게이트웨이
       1. gateway 스프링부트 App을 추가 후 application.yaml내에 각 마이크로 서비스의 routes 를 추가하고 gateway 서버의 포트를 8080 으로 설정함
        
           - application.yaml 예시
@@ -269,6 +268,7 @@ AirBnB 커버하기
             server:
               port: 8080            
             ```
+
          
       2. Kubernetes용 Deployment.yaml 을 작성하고 Kubernetes에 Deploy를 생성함
           - Deployment.yaml 예시
@@ -306,7 +306,8 @@ AirBnB 커버하기
             ```     
           - Kubernetes에 생성된 Deploy. 확인
             
-   ![image](https://user-images.githubusercontent.com/80744273/119321943-1d821200-bcb8-11eb-98d7-bf8def9ebf80.png)
+![image](https://user-images.githubusercontent.com/80744273/119321943-1d821200-bcb8-11eb-98d7-bf8def9ebf80.png)
+	    
             
       3. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
           - Service.yaml 예시
@@ -331,7 +332,7 @@ AirBnB 커버하기
 
            
             ```
-            Deploy 생성
+            Service 생성
             kubectl apply -f service.yaml            
             ```             
             
@@ -339,7 +340,7 @@ AirBnB 커버하기
           - API Gateay 엔드포인트 확인
            
             ```
-            Service 
+            Service  및 엔드포인트 확인 
             kubectl get svc -n airbnb           
             ```                 
 ![image](https://user-images.githubusercontent.com/80744273/119318358-2a046b80-bcb4-11eb-9d46-ef2d498c2cff.png)
@@ -1238,15 +1239,6 @@ data:
   # 단일 key-value
   max_reservation_per_person: "10"
   ui_properties_file_name: "user-interface.properties"
-
-  # 다수의 key-value
-  room.properties: |
-    room.types=hotel,pansion,guesthouse
-    room.maximum-count=5    
-  kakao-interface.properties: |
-    kakao.font.color=blud
-    kakao.color.bad=yellow
-    kakao.textmode=true
 ```
 
 2. deployment.yml에 적용하기
@@ -1275,14 +1267,5 @@ kubectl apply -f deployment.yml
         - name: volume
           persistentVolumeClaim:
             claimName: aws-efs
-        - name: config
-          configMap:
-            # cofingmap에 있는 다수의 key-value
-            name: game-demo
-              items:
-                - key: "room.properties"
-                  path: "room.properties"
-                - key: "kakao-interface.properties"
-                  path: "kakao-interface.properties"
 ```
 
