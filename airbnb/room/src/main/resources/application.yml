@@ -9,10 +9,6 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2 
   cloud:
     stream:
       kafka:
