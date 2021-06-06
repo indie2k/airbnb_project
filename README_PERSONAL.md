@@ -208,6 +208,10 @@ AirBnB 커버하기
                       uri: http://viewpage:8080
                       predicates:
                         - Path= /roomviews/**
+                    - id: rentcar
+                      uri: http://rentcar:8080
+                      predicates:
+                    - Path=/rentcars/**, /chkcar/**
                   globalcors:
                     corsConfigurations:
                       '[/**]':
@@ -448,10 +452,22 @@ public interface RoomService {
 
 }
 
+# RentcarService.java
+
+<import문 생략>
+
+@FeignClient(name="rentcar", url="${prop.room.url}")
+public interface RentcarService {
+
+    @RequestMapping(method= RequestMethod.GET, path="/chkcar/chkStatus")
+    public boolean chkStatus(@RequestParam("carId") long carId);
+
+}
+
 
 ```
 
-- 예약 요청을 받은 직후(@PostPersist) 가능상태 확인 및 결제를 동기(Sync)로 요청하도록 처리
+- 예약 요청을 받은 직후(@PostPersist) 가능 상태 확인 및 결제를 동기(Sync)로 요청하도록 처리
 ```
 # Reservation.java (Entity)
 
@@ -467,31 +483,47 @@ public interface RoomService {
         ////////////////////////////////////
 
         // 해당 ROOM이 Available한 상태인지 체크
-        boolean result = ReservationApplication.applicationContext.getBean(airbnb.external.RoomService.class)
-                        .chkAndReqReserve(this.getRoomId());
-        System.out.println("######## Check Result : " + result);
+        boolean result = ReservationApplication.applicationContext.getBean(airbnb.external.RoomService.class).chkAndReqReserve(this.getRoomId());
+        
+        if(result == false) {
+            return; // 방이 예약 가능한 상태가 아닌 경우 여기서 끝낸다
+        }
 
-        if(result) { 
+        // 방이 예약 가능한 상태이면서 렌터카 예약이 들어온 경우 렌터카 체크 한번 더 한다.
+        if(carId > 0) {
 
-            // 예약 가능한 상태인 경우(Available)
+            result = ReservationApplication.applicationContext.getBean(airbnb.external.RentcarService.class).chkStatus(this.getCarId());
+            
+            if(result == false) {
+                return; // 해당 렌터카가 예약 가능한 상태가 아닌 경우 여기서 끝낸다
+            }
 
-            //////////////////////////////
-            // PAYMENT 결제 진행 (POST방식) - SYNC 호출
-            //////////////////////////////
-            airbnb.external.Payment payment = new airbnb.external.Payment();
-            payment.setRsvId(this.getRsvId());
-            payment.setRoomId(this.getRoomId());
-            payment.setStatus("paid");
-            ReservationApplication.applicationContext.getBean(airbnb.external.PaymentService.class)
+        } else {
+            System.out.println("######## No RentCar Reservation");
+        }
+        
+        //////////////////////////////////////////
+        // 이 지점까지 왔다는 것은 예약이 가능한 상태
+        //////////////////////////////////////////
+
+        //////////////////////////////
+        // PAYMENT 결제 진행 (POST방식)
+        //////////////////////////////
+        airbnb.external.Payment payment = new airbnb.external.Payment();
+        payment.setRsvId(this.getRsvId());
+        payment.setRoomId(this.getRoomId());
+        payment.setCarId(this.getCarId());
+        payment.setStatus("paid");
+        ReservationApplication.applicationContext.getBean(airbnb.external.PaymentService.class)
                 .approvePayment(payment);
 
-            /////////////////////////////////////
-            // 이벤트 발행 --> ReservationCreated
-            /////////////////////////////////////
-            ReservationCreated reservationCreated = new ReservationCreated();
-            BeanUtils.copyProperties(this, reservationCreated);
-            reservationCreated.publishAfterCommit();
-        }
+        /////////////////////////////////////
+        // 이벤트 발행 --> ReservationCreated
+        /////////////////////////////////////
+        ReservationCreated reservationCreated = new ReservationCreated();
+        BeanUtils.copyProperties(this, reservationCreated);
+        reservationCreated.publishAfterCommit();
+        
     }
 ```
 
@@ -518,7 +550,6 @@ http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Succe
 
 
 ## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
-
 
 결제가 이루어진 후에 숙소 시스템의 상태가 업데이트 되고, 예약 시스템의 상태가 업데이트 되며, 예약 및 취소 메시지가 전송되는 시스템과의 통신 행위는 비동기식으로 처리한다.
  
