@@ -151,7 +151,7 @@ AirBnB 커버하기
 
 ### [개인프로젝트]헥사고날 아키텍처 다이어그램 추가
 
-![image](https://user-images.githubusercontent.com/31723044/120928606-3f4fb000-c720-11eb-9fc8-399669dec31c.png)
+![image](https://user-images.githubusercontent.com/31723044/120928860-72467380-c721-11eb-8b35-eaae1a1b1bf5.png)
 
 
 # 구현:
