@@ -588,29 +588,25 @@ public class Payment {
 - 예약 시스템에서는 결제 승인 이벤트에 대해서 이를 수신하여 자신의 정책을 처리하도록 PolicyHandler 를 구현한다:
 
 ```
-# Reservation.java
+# PolicyHandler.java in RESERVATION Service
 
-package airbnb;
 
-    @PostUpdate
-    public void onPostUpdate(){
-    
-        ....
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverPaymentApproved_ConfirmReserve(@Payload PaymentApproved paymentApproved){
 
-        if(this.getStatus().equals("reserved")) {
+        if(paymentApproved.isMe()){
 
-            ////////////////////
-            // 예약 확정된 경우
-            ////////////////////
+            ///////////////////////////////////////
+            // 결제 완료 시 -> Status -> reserved
+            ///////////////////////////////////////
+            System.out.println("##### listener ConfirmReserve : " + paymentApproved.toJson());
 
-            // 이벤트 발생 --> ReservationConfirmed
-            ReservationConfirmed reservationConfirmed = new ReservationConfirmed();
-            BeanUtils.copyProperties(this, reservationConfirmed);
-            reservationConfirmed.publishAfterCommit();
+            long rsvId = paymentApproved.getRsvId(); // 결제 완료된 rsvId
+            long payId = paymentApproved.getPayId(); // 결제된 payId -> 나중에 취소할때 쓰임
+
+            updateResvationStatus(rsvId, "reserved", payId); // Status Update
+
         }
-        
-        ....
-        
     }
 
 ```
