@@ -179,129 +179,6 @@ AirBnB 커버하기
 - 실제로 view 페이지를 조회해 보면 모든 room에 대한 전반적인 예약 상태, 결제 상태, 리뷰 건수 등의 정보를 종합적으로 알 수 있다
   ![image](https://user-images.githubusercontent.com/31723044/121303043-895daf00-c935-11eb-9474-86891619db36.png)
   
-## API 게이트웨이
-      1. gateway 스프링부트 App을 추가 후 application.yaml내에 각 마이크로 서비스의 routes 를 추가하고 gateway 서버의 포트를 8080 으로 설정함
-       
-          - application.yaml 예시
-            ```
-            spring:
-              profiles: docker
-              cloud:
-                gateway:
-                  routes:
-                    - id: payment
-                      uri: http://payment:8080
-                      predicates:
-                        - Path=/payments/** 
-                    - id: room
-                      uri: http://room:8080
-                      predicates:
-                        - Path=/rooms/**, /reviews/**, /check/**
-                    - id: reservation
-                      uri: http://reservation:8080
-                      predicates:
-                        - Path=/reservations/**
-                    - id: message
-                      uri: http://message:8080
-                      predicates:
-                        - Path=/messages/** 
-                    - id: viewpage
-                      uri: http://viewpage:8080
-                      predicates:
-                        - Path= /roomviews/**
-                    - id: rentcar
-                      uri: http://rentcar:8080
-                      predicates:
-                    - Path=/rentcars/**, /chkcar/**
-                  globalcors:
-                    corsConfigurations:
-                      '[/**]':
-                        allowedOrigins:
-                          - "*"
-                        allowedMethods:
-                          - "*"
-                        allowedHeaders:
-                          - "*"
-                        allowCredentials: true
-
-            server:
-              port: 8080            
-            ```
-
-         
-      2. Kubernetes용 Deployment.yaml 을 작성하고 Kubernetes에 Deploy를 생성함
-          - Deployment.yaml 예시
-          
-
-            ```
-            apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: gateway
-              namespace: airbnb
-              labels:
-                app: gateway
-            spec:
-              replicas: 1
-              selector:
-                matchLabels:
-                  app: gateway
-              template:
-                metadata:
-                  labels:
-                    app: gateway
-                spec:
-                  containers:
-                    - name: gateway
-                      image: 247785678011.dkr.ecr.us-east-2.amazonaws.com/gateway:1.0
-                      ports:
-                        - containerPort: 8080
-            ```               
-            
-
-            ```
-            Deploy 생성
-            kubectl apply -f deployment.yaml
-            ```     
-          - Kubernetes에 생성된 Deploy. 확인
-            
-            
-      3. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
-          - Service.yaml 예시
-          
-            ```
-            apiVersion: v1
-              kind: Service
-              metadata:
-                name: gateway
-                namespace: airbnb
-                labels:
-                  app: gateway
-              spec:
-                ports:
-                  - port: 8080
-                    targetPort: 8080
-                selector:
-                  app: gateway
-                type:
-                  LoadBalancer           
-            ```             
-
-           
-            ```
-            Service 생성
-            kubectl apply -f service.yaml            
-            ```             
-            
-            
-          - API Gateay 엔드포인트 확인
-           
-            ```
-            Service  및 엔드포인트 확인 
-            kubectl get svc -n airbnb           
-            ```                 
-![image](https://user-images.githubusercontent.com/31723044/121303509-2587b600-c936-11eb-9133-41e725721bd3.png)
-
 # Correlation
 
 Airbnb 프로젝트에서는 PolicyHandler에서 처리 시 어떤 건에 대한 처리인지를 구별하기 위한 Correlation-key 구현을 
@@ -330,93 +207,7 @@ Airbnb 프로젝트에서는 PolicyHandler에서 처리 시 어떤 건에 대한
 취소 후 - 결제 상태
 ![image](https://user-images.githubusercontent.com/31723044/119320806-ee1ed580-bcb6-11eb-8ccf-8c81385cc8ba.png)
 
-
-## DDD 의 적용
-
-- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다. (예시는 room 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 현실에서 발생가는한 이벤트에 의하여 마이크로 서비스들이 상호 작용하기 좋은 모델링으로 구현을 하였다.
-
-```
-package airbnb;
-
-import javax.persistence.*;
-import org.springframework.beans.BeanUtils;
-
-@Entity
-@Table(name="Room_table")
-public class Room {
-
-    @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private Long roomId;       // 방ID
-    private String status;     // 방 상태
-    private String desc;       // 방 상세 설명
-    private Long reviewCnt;    // 리뷰 건수
-    private String lastAction; // 최종 작업
-
-    public Long getRoomId() {
-        return roomId;
-    }
-
-    public void setRoomId(Long roomId) {
-        this.roomId = roomId;
-    }
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-    public Long getReviewCnt() {
-        return reviewCnt;
-    }
-
-    public void setReviewCnt(Long reviewCnt) {
-        this.reviewCnt = reviewCnt;
-    }
-    public String getLastAction() {
-        return lastAction;
-    }
-
-    public void setLastAction(String lastAction) {
-        this.lastAction = lastAction;
-    }
-}
-
-```
-- Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
-```
-package airbnb;
-
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.data.rest.core.annotation.RepositoryRestResource;
-
-@RepositoryRestResource(collectionResourceRel="rooms", path="rooms")
-public interface RoomRepository extends PagingAndSortingRepository<Room, Long>{
-
-}
-```
-- 적용 후 REST API 의 테스트
-```
-# room 서비스의 room 등록
-http POST http://localhost:8088/rooms desc="Beautiful House"  
-
-# reservation 서비스의 예약 요청
-http POST http://localhost:8088/reservations roomId=1 status=reqReserve
-
-# reservation 서비스의 예약 상태 확인
-http GET http://localhost:8088/reservations
-
-```
-
-## 동기식 호출(Sync) 과 Fallback 처리
+## Req/Resp
 
 분석 단계에서의 조건 중 하나로 예약 시 숙소(room) 간의 예약 가능 상태 확인 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 또한 예약(reservation) -> 결제(payment) 서비스도 동기식으로 처리하기로 하였다.
 
@@ -543,7 +334,214 @@ mvn spring-boot:run
 http POST http://localhost:8088/reservations roomId=1 status=reqReserve   #Success
 ```
 
-- 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
+## API 게이트웨이
+      1. gateway 스프링부트 App을 추가 후 application.yaml내에 각 마이크로 서비스의 routes 를 추가하고 gateway 서버의 포트를 8080 으로 설정함
+       
+          - application.yaml 예시
+            ```
+            spring:
+              profiles: docker
+              cloud:
+                gateway:
+                  routes:
+                    - id: payment
+                      uri: http://payment:8080
+                      predicates:
+                        - Path=/payments/** 
+                    - id: room
+                      uri: http://room:8080
+                      predicates:
+                        - Path=/rooms/**, /reviews/**, /check/**
+                    - id: reservation
+                      uri: http://reservation:8080
+                      predicates:
+                        - Path=/reservations/**
+                    - id: message
+                      uri: http://message:8080
+                      predicates:
+                        - Path=/messages/** 
+                    - id: viewpage
+                      uri: http://viewpage:8080
+                      predicates:
+                        - Path= /roomviews/**
+                    - id: rentcar
+                      uri: http://rentcar:8080
+                      predicates:
+                    - Path=/rentcars/**, /chkcar/**
+                  globalcors:
+                    corsConfigurations:
+                      '[/**]':
+                        allowedOrigins:
+                          - "*"
+                        allowedMethods:
+                          - "*"
+                        allowedHeaders:
+                          - "*"
+                        allowCredentials: true
+
+            server:
+              port: 8080            
+            ```
+
+         
+      2. Kubernetes용 Deployment.yaml 을 작성하고 Kubernetes에 Deploy를 생성함
+          - Deployment.yaml 예시
+          
+
+            ```
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: gateway
+              namespace: airbnb
+              labels:
+                app: gateway
+            spec:
+              replicas: 1
+              selector:
+                matchLabels:
+                  app: gateway
+              template:
+                metadata:
+                  labels:
+                    app: gateway
+                spec:
+                  containers:
+                    - name: gateway
+                      image: 247785678011.dkr.ecr.us-east-2.amazonaws.com/gateway:1.0
+                      ports:
+                        - containerPort: 8080
+            ```               
+            
+
+            ```
+            Deploy 생성
+            kubectl apply -f deployment.yaml
+            ```     
+          - Kubernetes에 생성된 Deploy. 확인
+            
+            
+      3. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
+          - Service.yaml 예시
+          
+            ```
+            apiVersion: v1
+              kind: Service
+              metadata:
+                name: gateway
+                namespace: airbnb
+                labels:
+                  app: gateway
+              spec:
+                ports:
+                  - port: 8080
+                    targetPort: 8080
+                selector:
+                  app: gateway
+                type:
+                  LoadBalancer           
+            ```             
+
+           
+            ```
+            Service 생성
+            kubectl apply -f service.yaml            
+            ```             
+            
+            
+          - API Gateay 엔드포인트 확인
+           
+            ```
+            Service  및 엔드포인트 확인 
+            kubectl get svc -n airbnb           
+            ```                 
+![image](https://user-images.githubusercontent.com/31723044/121303509-2587b600-c936-11eb-9133-41e725721bd3.png)
+
+
+## DDD 의 적용
+
+- 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다. (예시는 room 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다. 현실에서 발생가는한 이벤트에 의하여 마이크로 서비스들이 상호 작용하기 좋은 모델링으로 구현을 하였다.
+
+```
+package airbnb;
+
+import javax.persistence.*;
+import org.springframework.beans.BeanUtils;
+
+@Entity
+@Table(name="Room_table")
+public class Room {
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long roomId;       // 방ID
+    private String status;     // 방 상태
+    private String desc;       // 방 상세 설명
+    private Long reviewCnt;    // 리뷰 건수
+    private String lastAction; // 최종 작업
+
+    public Long getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
+    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+    public Long getReviewCnt() {
+        return reviewCnt;
+    }
+
+    public void setReviewCnt(Long reviewCnt) {
+        this.reviewCnt = reviewCnt;
+    }
+    public String getLastAction() {
+        return lastAction;
+    }
+
+    public void setLastAction(String lastAction) {
+        this.lastAction = lastAction;
+    }
+}
+
+```
+- Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
+```
+package airbnb;
+
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+
+@RepositoryRestResource(collectionResourceRel="rooms", path="rooms")
+public interface RoomRepository extends PagingAndSortingRepository<Room, Long>{
+
+}
+```
+- 적용 후 REST API 의 테스트
+```
+# room 서비스의 room 등록
+http POST http://localhost:8088/rooms desc="Beautiful House"  
+
+# reservation 서비스의 예약 요청
+http POST http://localhost:8088/reservations roomId=1 status=reqReserve
+
+# reservation 서비스의 예약 상태 확인
+http GET http://localhost:8088/reservations
+
+```
 
 
 
@@ -626,7 +624,7 @@ http GET localhost:8088/reservations    #메시지 서비스와 상관없이 예
 # 운영
 
 
-## CI/CD 설정
+## Deploy/Pipeline
 
 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD는 buildspec.yml을 이용한 AWS codebuild를 사용하였습니다.
 
