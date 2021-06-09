@@ -880,88 +880,34 @@ Longest transaction:            2.55
 Shortest transaction:           0.01
 ```
 
-## 무정지 재배포
+## Zero-downtime deploy (Readiness Probe)
 
-* 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
+* 무정지 재배포가 일부러 되지 않게 구현
 
+deployment.yml에서 readinessProbe 부분 주석 처리   
+![image](https://user-images.githubusercontent.com/31723044/121297904-fb31fa80-c92d-11eb-80d8-6f8280ac6c94.png)
+
+Siege 부하 수행   
 ```
-kubectl delete destinationrules dr-room -n airbnb
-kubectl label namespace airbnb istio-injection-
-kubectl delete hpa room -n airbnb
-```
-
-- seige 로 배포작업 직전에 워크로드를 모니터링 함.
-```
-siege -c100 -t60S -r10 -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
-
-** SIEGE 4.0.4
-** Preparing 1 concurrent users for battle.
-The server is now under siege...
-HTTP/1.1 201     0.01 secs:     260 bytes ==> POST http://room:8080/rooms
-HTTP/1.1 201     0.01 secs:     260 bytes ==> POST http://room:8080/rooms
-HTTP/1.1 201     0.01 secs:     260 bytes ==> POST http://room:8080/rooms
-HTTP/1.1 201     0.03 secs:     260 bytes ==> POST http://room:8080/rooms
-HTTP/1.1 201     0.00 secs:     260 bytes ==> POST http://room:8080/rooms
-HTTP/1.1 201     0.02 secs:     260 bytes ==> POST http://room:8080/rooms
-HTTP/1.1 201     0.01 secs:     260 bytes ==> POST http://room:8080/rooms
-HTTP/1.1 201     0.01 secs:     260 bytes ==> POST http://room:8080/rooms
-
+siege -c1 -t180S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 ```
 
-- 새버전으로의 배포 시작
-```
-kubectl set image ...
-```
-
-- seige 의 화면으로 넘어가서 Availability 가 100% 미만으로 떨어졌는지 확인
-
-```
-siege -c100 -t60S -r10 -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
+재배포중 서비스 실패됨을 확인(Availability:84.77%)   
+![image](https://user-images.githubusercontent.com/31723044/121297912-008f4500-c92e-11eb-8fdf-9d6bc83d0b46.png)
 
 
-Transactions:                   7732 hits
-Availability:                  87.32 %
-Elapsed time:                  17.12 secs
-Data transferred:               1.93 MB
-Response time:                  0.18 secs
-Transaction rate:             451.64 trans/sec
-Throughput:                     0.11 MB/sec
-Concurrency:                   81.21
-Successful transactions:        7732
-Failed transactions:            1123
-Longest transaction:            0.94
-Shortest transaction:           0.00
+* 무정지 재배포 되도록 구현
 
-```
-- 배포기간중 Availability 가 평소 100%에서 87% 대로 떨어지는 것을 확인. 원인은 쿠버네티스가 성급하게 새로 올려진 서비스를 READY 상태로 인식하여 서비스 유입을 진행한 것이기 때문. 이를 막기위해 Readiness Probe 를 설정함
+deployment.yml에서 readinessProbe 부분 설정   
+![image](https://user-images.githubusercontent.com/31723044/121297928-071dbc80-c92e-11eb-9087-920066f89d86.png)
 
+Siege 부하 재수행   
 ```
-# deployment.yaml 의 readiness probe 의 설정:
+siege -c1 -t180S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 ```
 
-![probe설정](https://user-images.githubusercontent.com/38099203/119301424-71333200-bc9d-11eb-9f75-f8c98fce70a3.PNG)
-
-```
-kubectl apply -f kubernetes/deployment.yml
-```
-
-- 동일한 시나리오로 재배포 한 후 Availability 확인:
-```
-Lifting the server siege...
-Transactions:                  27657 hits
-Availability:                 100.00 %
-Elapsed time:                  59.41 secs
-Data transferred:               6.91 MB
-Response time:                  0.21 secs
-Transaction rate:             465.53 trans/sec
-Throughput:                     0.12 MB/sec
-Concurrency:                   99.60
-Successful transactions:       27657
-Failed transactions:               0
-Longest transaction:            1.20
-Shortest transaction:           0.00
-
-```
+readinessProbe 설정 후에는 재수행하면 부하 테스트 결과 100프로로 성공됨(Availability:100%)   
+![image](https://user-images.githubusercontent.com/31723044/121297996-23b9f480-c92e-11eb-988d-f9bf2d8aeee3.png)
 
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
 
