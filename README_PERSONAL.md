@@ -1023,6 +1023,7 @@ String cityStr = System.getenv("CITYNAME");
 if(!cityStr.isEmpty()) {
   msgString += ", 도시명["+cityStr+"]";
 }
+```
 
 4. ConfigMap 적용 수행 결과
 
