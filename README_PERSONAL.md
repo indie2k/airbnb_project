@@ -1020,11 +1020,11 @@ if(!cityStr.isEmpty()) {
 
 - 수정된 deployment.yml로 재 실행 후 watch kubectl -n airbnb get all로 Room 서비스 Restart 확인
 
-최초 수행 상태
+최초 수행 상태   
 ![image](https://user-images.githubusercontent.com/31723044/121294581-9b852080-c928-11eb-8381-089d8b89dd3b.png)
 
-1회 재시작(RESTART) 확인
+1회 재시작(RESTART) 확인   
 ![image](https://user-images.githubusercontent.com/31723044/121294609-a50e8880-c928-11eb-9ac3-b05db9ad636b.png)
 
-2회 재시작(RESTART) 확인
+2회 재시작(RESTART) 확인   
 ![image](https://user-images.githubusercontent.com/31723044/121294626-ac359680-c928-11eb-9bcb-50fb4ae24b6d.png)
