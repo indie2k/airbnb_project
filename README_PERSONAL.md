@@ -966,24 +966,6 @@ Shortest transaction:           0.00
 배포기간 동안 Availability 가 변화없기 때문에 무정지 재배포가 성공한 것으로 확인됨.
 
 
-# Self-healing (Liveness Probe)
-- room deployment.yml 파일 수정 
-```
-콘테이너 실행 후 /tmp/healthy 파일을 만들고 
-90초 후 삭제
-livenessProbe에 'cat /tmp/healthy'으로 검증하도록 함
-```
-![deployment yml tmp healthy](https://user-images.githubusercontent.com/38099203/119318677-8ff0f300-bcb4-11eb-950a-e3c15feed325.PNG)
-
-- kubectl describe pod room -n airbnb 실행으로 확인
-```
-컨테이너 실행 후 90초 동인은 정상이나 이후 /tmp/healthy 파일이 삭제되어 livenessProbe에서 실패를 리턴하게 됨
-pod 정상 상태 일때 pod 진입하여 /tmp/healthy 파일 생성해주면 정상 상태 유지됨
-```
-
-![get pod tmp healthy](https://user-images.githubusercontent.com/38099203/119318781-a9923a80-bcb4-11eb-9783-65051ec0d6e8.PNG)
-![touch tmp healthy](https://user-images.githubusercontent.com/38099203/119319050-f118c680-bcb4-11eb-8bca-aa135c1e067e.PNG)
-
 # Config Map/ Persistence Volume
 
 - Config Map
@@ -1028,3 +1010,21 @@ if(!cityStr.isEmpty()) {
 4. ConfigMap 적용 수행 결과
 
 ![image](https://user-images.githubusercontent.com/31723044/121293009-e05b8800-c925-11eb-8ecd-bb4af264145c.png)
+
+
+# Self-healing (Liveness Probe)
+
+- room deployment.yml 파일을 임시로 Liveness Probe가 실패하도록 수정
+ 
+![image](https://user-images.githubusercontent.com/31723044/121294448-61b41a00-c928-11eb-8669-17da64893a60.png)
+
+- 수정된 deployment.yml로 재 실행 후 watch kubectl -n airbnb get all로 Room 서비스 Restart 확인
+
+최초 수행 상태
+![image](https://user-images.githubusercontent.com/31723044/121294581-9b852080-c928-11eb-8381-089d8b89dd3b.png)
+
+1회 재시작(RESTART) 확인
+![image](https://user-images.githubusercontent.com/31723044/121294609-a50e8880-c928-11eb-9ac3-b05db9ad636b.png)
+
+2회 재시작(RESTART) 확인
+![image](https://user-images.githubusercontent.com/31723044/121294626-ac359680-c928-11eb-9bcb-50fb4ae24b6d.png)
