@@ -265,8 +265,6 @@ AirBnB 커버하기
             ```     
           - Kubernetes에 생성된 Deploy. 확인
             
-![image](https://user-images.githubusercontent.com/80744273/119321943-1d821200-bcb8-11eb-98d7-bf8def9ebf80.png)
-	    
             
       3. Kubernetes용 Service.yaml을 작성하고 Kubernetes에 Service/LoadBalancer을 생성하여 Gateway 엔드포인트를 확인함. 
           - Service.yaml 예시
@@ -302,7 +300,7 @@ AirBnB 커버하기
             Service  및 엔드포인트 확인 
             kubectl get svc -n airbnb           
             ```                 
-![image](https://user-images.githubusercontent.com/80744273/119318358-2a046b80-bcb4-11eb-9d46-ef2d498c2cff.png)
+![image](https://user-images.githubusercontent.com/31723044/121303509-2587b600-c936-11eb-9133-41e725721bd3.png)
 
 # Correlation
 
