@@ -666,6 +666,20 @@ codebuild 프로젝트 및 빌드 이력
 
 ![image](https://user-images.githubusercontent.com/31723044/119385401-087da100-bd01-11eb-8b69-ce222e6bb71e.png)
 
+- 개인 프로젝트 진행 시 Room 서비스만 Code Build Pipeline 적용함 [2021.06.09]
+
+AWS CodeBuild에서 standard3.0 지원을 하지 않게 됨에 따라 buildspec.yml의 openjdk8 부분을 corretto8 으로 변경
+
+```
+    runtime-versions:
+      java: corretto8
+      docker: 18
+```
+
+AWS CodeBuild 빌드 성공 확인
+
+![image](https://user-images.githubusercontent.com/31723044/121312817-b82d5280-c940-11eb-9cc0-98294d28746b.png)
+
 
 
 
