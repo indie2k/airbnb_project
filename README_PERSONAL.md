@@ -841,43 +841,57 @@ Shortest transaction:           0.00
 
 
 ### 오토스케일 아웃
-앞서 CB 는 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다. 
 
-- room deployment.yml 파일에 resources 설정을 추가한다
-![Autoscale (HPA)](https://user-images.githubusercontent.com/38099203/119283787-0a038680-bc79-11eb-8d9b-d8aed8847fef.PNG)
+오토스케일 아웃을 확인하기 위해 Room 서비스에 resource 설정 및 오토스케일 설정을 한 후 부하 툴을 통해 테스트를 진행함.
 
-- room 서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 50프로를 넘어서면 replica 를 10개까지 늘려준다:
+- room deployment.yml 파일에 resources 설정을 추가한다   
+
+![image](https://user-images.githubusercontent.com/31723044/121301076-a17fff00-c932-11eb-8753-86d6915ee25b.png)
+
+- Room 서비스에 대해서 오토 스케일 아웃을 테스트 하기 위해 아래와 같이 설정을 한다.   
+room 서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 50프로를 넘어서면 replica 를 10개까지 늘려준다.   
+
 ```
 kubectl autoscale deployment room -n airbnb --cpu-percent=50 --min=1 --max=10
 ```
-![Autoscale (HPA)(kubectl autoscale 명령어)](https://user-images.githubusercontent.com/38099203/119299474-ec92e480-bc99-11eb-9bc3-8c5246b02783.PNG)
 
 - 부하를 동시사용자 100명, 1분 동안 걸어준다.
+
 ```
 siege -c100 -t60S -v --content-type "application/json" 'http://room:8080/rooms POST {"desc": "Beautiful House3"}'
 ```
-- 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다
-```
-kubectl get deploy room -w -n airbnb 
-```
-- 어느정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다:
-![Autoscale (HPA)(모니터링)](https://user-images.githubusercontent.com/38099203/119299704-6a56f000-bc9a-11eb-9ba8-55e5978f3739.PNG)
 
-- siege 의 로그를 보아도 전체적인 성공률이 높아진 것을 확인 할 수 있다. 
+![image](https://user-images.githubusercontent.com/31723044/121302101-228bc600-c934-11eb-9108-99f90958291c.png)
+
+- 오토스케일 과정 확인 ( kubectl -n airbnb top pod )
+
+![image](https://user-images.githubusercontent.com/31723044/121302166-3f27fe00-c934-11eb-97a8-ac62d71fcac9.png)
+
+- 오토스케일 과정 확인 ( TOP에서 CPU 사용률 갑자기 증가 확인 )
+
+![image](https://user-images.githubusercontent.com/31723044/121302183-43ecb200-c934-11eb-8ff7-80a94b5b9492.png)
+
+- Room Pod 자동 확장 확인 ( 1개였던 Room 서비스가 최종적으로 4개까지 확장됨)
+
+![image](https://user-images.githubusercontent.com/31723044/121302198-4bac5680-c934-11eb-80db-9e86c5b4a56c.png)
+![image](https://user-images.githubusercontent.com/31723044/121302228-5830af00-c934-11eb-8d46-66b8272ca29e.png)
+
+
+- siege 의 최종 Report 
 ```
 Lifting the server siege...
-Transactions:                  15615 hits
+Transactions:                  26850 hits
 Availability:                 100.00 %
-Elapsed time:                  59.44 secs
-Data transferred:               3.90 MB
-Response time:                  0.32 secs
-Transaction rate:             262.70 trans/sec
-Throughput:                     0.07 MB/sec
-Concurrency:                   85.04
-Successful transactions:       15675
+Elapsed time:                  59.70 secs
+Data transferred:               6.71 MB
+Response time:                  0.22 secs
+Transaction rate:             449.75 trans/sec
+Throughput:                     0.11 MB/sec
+Concurrency:                   99.20
+Successful transactions:       26850
 Failed transactions:               0
-Longest transaction:            2.55
-Shortest transaction:           0.01
+Longest transaction:            1.79
+Shortest transaction:           0.00
 ```
 
 ## Zero-downtime deploy (Readiness Probe)
